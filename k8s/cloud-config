@@ -1,0 +1,66 @@
+#cloud-config
+
+coreos:
+  fleet:
+    etcd_servers: ${etcd_endpoints}
+    etcd_request_timeout: ${fleet_etcd_request_timeout}
+    etcd_cafile: ${ca_file}
+    etcd_certfile: ${cert_file}
+    etcd_keyfile: ${key_file}
+    agent_ttl: ${fleet_agent_ttl}
+    public_ip: $private_ipv4
+
+  flannel:
+    etcd_endpoints: ${etcd_endpoints}
+    etcd_cafile: ${ca_file}
+    etcd_certfile: ${cert_file}
+    etcd_keyfile: ${key_file}
+    interface: $public_ipv4
+
+  locksmith:
+    endpoint: ${etcd_endpoints}
+    etcd_cafile: ${ca_file}
+    etcd_certfile: ${cert_file}
+    etcd_keyfile: ${key_file}
+
+  update:
+    reboot-strategy: "etcd-lock"
+
+  units:
+    - name: fleet.service
+      command: start
+      enable: true
+    - name: flanneld.service
+      command: start
+      enable: true
+      drop-ins:
+      - name: 50-network-config.conf
+        content: |
+          [Service]
+          EnvironmentFile=/etc/environment
+          Environment="ETCD_SSL_DIR=${tls_home}"
+          ExecStartPre=/usr/bin/etcdctl --endpoints "${etcd_endpoints}" --ca-file ${ca_file} --key-file ${key_file} --cert-file ${cert_file} set /coreos.com/network/config '{ "Network": "${cluster_cidr}" }'
+          Restart=on-failure
+          RestartSec=5
+    - name: docker.service
+      command: start
+      enable: true
+      drop-ins:
+      - name: 40-flannel.conf
+        content: |
+          [Unit]
+          Requires=flanneld.service
+          After=flanneld.service
+
+write_files:
+- path: "/etc/profile.d/k8s.sh"
+  owner: "root"
+  content: |
+    export PATH=$PATH:/${bin_home}
+- path: "/etc/profile.env"
+  owner: "root"
+  content: |
+    export ETCDCTL_ENDPOINTS=${etcd_endpoints}
+    export ETCDCTL_CERT_FILE=${cert_file}
+    export ETCDCTL_KEY_FILE=${key_file}
+    export ETCDCTL_CA_FILE=${ca_file}

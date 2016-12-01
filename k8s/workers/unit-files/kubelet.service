@@ -1,0 +1,30 @@
+[Unit]
+Description=Kubernetes Kubelet
+After=docker.service
+Requires=docker.service
+
+[Service]
+EnvironmentFile=/etc/environment
+ExecStart=/opt/k8s/bin/kubelet \
+  --allow-privileged=true \
+  --address=$${COREOS_PRIVATE_IPV4} \
+  --cluster-dns=${cluster_dns_ip} \
+  --cluster-domain=${cluster_domain} \
+  --hostname-override=$${COREOS_PRIVATE_IPV4} \
+  --container-runtime=docker \
+  --docker-endpoint=unix:///var/run/docker.sock \
+  --require-kubeconfig=true \
+  --kubeconfig=${kubeconfig_path} \
+  --network-plugin=kubenet \
+  --network-plugin-dir=${cni_home} \
+  --reconcile-cidr=true \
+  --root-dir=${lib_home} \
+  --serialize-image-pulls=false \
+  --tls-cert-file=${cert_file} \
+  --tls-private-key-file=${key_file} \
+  --v=2
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

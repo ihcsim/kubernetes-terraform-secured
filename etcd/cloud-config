@@ -1,0 +1,54 @@
+#cloud-config
+
+coreos:
+  etcd2:
+    discovery: ${discovery_url}
+    advertise_client_urls: https://$public_ipv4:${etcd_client_port}
+    listen_client_urls: https://0.0.0.0:${etcd_client_port}
+    initial_advertise_peer_urls: https://$private_ipv4:${etcd_peer_port}
+    listen_peer_urls: https://$private_ipv4:${etcd_peer_port}
+    election_timeout: ${etcd_election_timeout}
+    heartbeat_interval: ${etcd_heartbeat_interval}
+    cert_file: ${cert_file}
+    key_file: ${key_file}
+    trusted_ca_file: ${trusted_ca_file}
+    client_cert_auth: ${client_cert_auth}
+    peer_cert_file: ${cert_file}
+    peer_key_file: ${key_file}
+    peer_trusted_ca_file: ${trusted_ca_file}
+    peer_client_cert_auth: ${peer_client_cert_auth}
+
+  fleet:
+    etcd_servers: https://$private_ipv4:${etcd_client_port}
+    etcd_request_timeout: ${fleet_etcd_request_timeout}
+    etcd_cafile: ${trusted_ca_file}
+    etcd_certfile: ${cert_file}
+    etcd_keyfile: ${key_file}
+    agent_ttl: ${fleet_agent_ttl}
+    public_ip: $private_ipv4
+
+  locksmith:
+    endpoint: https://$private_ipv4:${etcd_client_port}
+    etcd_cafile: ${trusted_ca_file}
+    etcd_certfile: ${cert_file}
+    etcd_keyfile: ${key_file}
+
+  update:
+    reboot-strategy: "etcd-lock"
+
+  units:
+    - name: etcd2.service
+      command: start
+      enable: true
+    - name: fleet.service
+      command: start
+      enable: true
+
+write_files:
+  - path: "/etc/profile.env"
+    owner: "root"
+    content: |
+      export ETCDCTL_ENDPOINTS=https://$private_ipv4:${etcd_client_port}
+      export ETCDCTL_CERT_FILE=${cert_file}
+      export ETCDCTL_KEY_FILE=${key_file}
+      export ETCDCTL_CA_FILE=${trusted_ca_file}

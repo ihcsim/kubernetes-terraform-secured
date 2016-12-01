@@ -1,0 +1,36 @@
+do_api_token =
+
+droplet_ssh_user =
+droplet_private_key_file =
+droplet_private_key_id =
+
+etcd_discovery_url =
+
+k8s_apiserver_token_admin =
+k8s_apiserver_token_kubelet =
+k8s_apiserver_basic_auth_admin =
+
+tls_ca_cert_subject_common_name =
+tls_cluster_cert_subject_common_name =
+tls_cluster_cert_subject_organization =
+tls_cluster_cert_subject_organizational_unit =
+tls_cluster_cert_subject_street_address =
+tls_cluster_cert_subject_locality =
+tls_cluster_cert_subject_province =
+tls_cluster_cert_subject_postal_code =
+tls_cluster_cert_subject_country =
+tls_cluster_cert_subject_serial_number =
+tls_cluster_cert_validity_period_hours =
+tls_cluster_cert_early_renewal_hours =
+
+tls_client_cert_subject_common_name =
+tls_client_cert_subject_organization =
+tls_client_cert_subject_organizational_unit =
+tls_client_cert_subject_street_address =
+tls_client_cert_subject_locality =
+tls_client_cert_subject_province =
+tls_client_cert_subject_postal_code =
+tls_client_cert_subject_country =
+tls_client_cert_subject_serial_number =
+tls_client_cert_validity_period_hours =
+tls_client_cert_early_renewal_hours =
