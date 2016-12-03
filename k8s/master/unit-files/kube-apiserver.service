@@ -12,6 +12,7 @@ ExecStart=/opt/k8s/bin/kube-apiserver \
   --allow-privileged=true \
   --authorization-mode=ABAC \
   --authorization-policy-file=${authorization_policy_file} \
+  --basic-auth-file=${basic_auth_file} \
   --bind-address=0.0.0.0 \
   --client-ca-file=${client_ca_file} \
   --enable-swagger-ui=true \

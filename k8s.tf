@@ -52,8 +52,13 @@ resource "digitalocean_droplet" "k8s_master" {
 	}
 
   provisioner "file" {
-    content = "${data.template_file.auth_policy.rendered}"
+    content = "${data.template_file.auth_policy_file.rendered}"
     destination = "${var.k8s_auth_policy_file}"
+  }
+
+  provisioner "file" {
+    content = "${data.template_file.basic_auth_file.rendered}"
+    destination = "${var.k8s_basic_auth_file}"
   }
 
   provisioner "file" {
@@ -112,6 +117,7 @@ data "template_file" "k8s_cloud_config" {
     bin_home = "${var.k8s_bin_home}"
     ca_file = "${var.k8s_ca_file}"
     cert_file = "${var.k8s_cert_file}"
+    cluster_cidr = "${var.k8s_cluster_cidr}"
     etcd_endpoints  = "${join(",", formatlist("https://%s:2379", digitalocean_droplet.etcd.*.ipv4_address_private))}"
     fleet_agent_ttl = "${var.fleet_agent_ttl}"
     fleet_etcd_request_timeout = "${var.fleet_etcd_request_timeout}"
@@ -125,6 +131,7 @@ data "template_file" "unit_file_apiserver" {
 
   vars {
     authorization_policy_file = "${var.k8s_auth_policy_file}"
+    basic_auth_file = "${var.k8s_basic_auth_file}"
     ca_file = "${var.k8s_ca_file}"
     cert_file = "${var.k8s_cert_file}"
     client_ca_file = "${var.k8s_client_ca_file}"
@@ -172,6 +179,18 @@ data "template_file" "kubeconfig" {
   }
 }
 
+data "template_file" "auth_policy_file" {
+  template = "${file("${path.module}/k8s/master/auth/authorization-policy.json")}"
+}
+
+data "template_file" "basic_auth_file" {
+  template = "${file("${path.module}/k8s/master/auth/basic")}"
+
+  vars {
+    password = "${var.k8s_apiserver_basic_auth_admin}"
+  }
+}
+
 data "template_file" "token_auth_file" {
   template = "${file("${path.module}/k8s/master/auth/token.csv")}"
 
@@ -179,10 +198,6 @@ data "template_file" "token_auth_file" {
     token_admin = "${var.k8s_apiserver_token_admin}"
     token_kubelet = "${var.k8s_apiserver_token_kubelet}"
   }
-}
-
-data "template_file" "auth_policy" {
-  template = "${file("${path.module}/k8s/master/auth/authorization-policy.json")}"
 }
 
 resource "digitalocean_droplet" "k8s_worker" {

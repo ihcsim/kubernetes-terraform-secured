@@ -15,7 +15,6 @@
 # Configuration to deploy release version of the Dashboard UI.
 #
 # Example usage: kubectl create -f <this_file>
-
 kind: Deployment
 apiVersion: extensions/v1beta1
 metadata:
@@ -51,17 +50,32 @@ spec:
         ports:
         - containerPort: 9090
           protocol: TCP
+        volumeMounts:
+        - name: "kubeconfig"
+          mountPath: "${lib_home}"
+          readOnly: true
+        - name: "tls"
+          mountPath: "${tls_home}"
+          readOnly: true
         args:
           # Uncomment the following line to manually specify Kubernetes API server Host
           # If not specified, Dashboard will attempt to auto discover the API server and connect
           # to it. Uncomment only if the default does not work.
-        - --apiserver-host=${apiserver_endpoint}
+          # - --apiserver-host=
+          - --kubeconfig=${kubeconfig_file}
         livenessProbe:
           httpGet:
             path: /
             port: 9090
           initialDelaySeconds: 30
           timeoutSeconds: 30
+      volumes:
+      - name: "kubeconfig"
+        hostPath:
+          path: "${lib_home}"
+      - name: "tls"
+        hostPath:
+          path: "${tls_home}"
 ---
 kind: Service
 apiVersion: v1

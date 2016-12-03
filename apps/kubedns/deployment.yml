@@ -70,7 +70,7 @@ spec:
           timeoutSeconds: 5
         args:
         # command = "/kube-dns"
-        - --kube-master-url=${kube_master_url}
+        - --kubecfg-file=${kubeconfig_file}
         - --domain=${cluster_domain}
         - --dns-port=10053
         ports:
@@ -80,6 +80,13 @@ spec:
         - containerPort: 10053
           name: dns-tcp-local
           protocol: TCP
+        volumeMounts:
+        - name: "kubeconfig"
+          mountPath: "${lib_home}"
+          readOnly: true
+        - name: "tls"
+          mountPath: "${tls_home}"
+          readOnly: true
       - name: dnsmasq
         image: gcr.io/google_containers/kube-dnsmasq-amd64:1.4
         livenessProbe:
@@ -122,3 +129,33 @@ spec:
         - containerPort: 8080
           protocol: TCP
       dnsPolicy: Default  # Don't use cluster DNS.
+      volumes:
+      - name: "kubeconfig"
+        hostPath:
+          path: "${lib_home}"
+      - name: "tls"
+        hostPath:
+          path: "${tls_home}"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kube-dns
+  namespace: kube-system
+  labels:
+    k8s-app: kube-dns
+    kubernetes.io/cluster-service: "true"
+    kubernetes.io/name: "KubeDNS"
+spec:
+  selector:
+    k8s-app: kube-dns
+  clusterIP: ${cluster_dns_ip}
+  ports:
+  - name: dns
+    port: 53
+    protocol: UDP
+  - name: dns-tcp
+    port: 53
+    protocol: TCP
+

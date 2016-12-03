@@ -26,8 +26,8 @@ variable "k8s_apiserver_token_kubelet" {
   description = "The 'kubelet' user's bearer token used to authenticate against the API Server. Refer http://kubernetes.io/docs/admin/authentication/#static-token-file for more details."
 }
 
-variable "client_ip" {
-  description = "IPV4 address of the external host where kubectl and etcdctl will be run."
+variable "k8s_apiserver_basic_auth_admin" {
+  description = "Basic authentication password for the 'admin' user to access the Kubernetes dashboard. Refer http://kubernetes.io/docs/admin/authentication/#static-password-file for more details."
 }
 
 variable "tls_ca_cert_subject_common_name" {
@@ -174,8 +174,28 @@ variable "fleet_etcd_request_timeout" {
   default = "5.0"
 }
 
-variable "flannel_overlay_subnet_range" {
-  default = "10.1.0.0/16"
+variable "local_tls_home" {
+  default = ".tls"
+}
+
+variable "local_ca_file" {
+  default = ".tls/ca.pem"
+}
+
+variable "local_etcd_cert_file" {
+  default = ".tls/etcd-cert.pem"
+}
+
+variable "local_etcd_key_file" {
+  default = ".tls/etcd-key.pem"
+}
+
+variable "local_kubectl_cert_file" {
+  default = ".tls/kubectl-cert.pem"
+}
+
+variable "local_kubectl_key_file" {
+  default = ".tls/kubectl-key.pem"
 }
 
 variable "k8s_version" {
@@ -219,7 +239,7 @@ variable "k8s_client_key_file" {
 }
 
 variable "k8s_cluster_dns_ip" {
-	default = "10.100.0.10"
+	default = "10.32.0.10"
 }
 
 variable "k8s_cluster_domain" {
@@ -239,7 +259,7 @@ variable "k8s_apiserver_secure_port" {
 }
 
 variable "k8s_service_cluster_ip_range" {
-  default = "10.100.0.0/16"
+  default = "10.32.0.0/24"
 }
 
 variable "k8s_home" {
@@ -272,6 +292,10 @@ variable "k8s_auth_home" {
 
 variable "k8s_auth_policy_file" {
   default = "/opt/k8s/auth/authorization-policy.json"
+}
+
+variable "k8s_basic_auth_file" {
+  default = "/opt/k8s/auth/basic"
 }
 
 variable "k8s_token_auth_file" {

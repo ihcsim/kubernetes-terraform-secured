@@ -39,7 +39,7 @@ coreos:
           [Service]
           EnvironmentFile=/etc/environment
           Environment="ETCD_SSL_DIR=${tls_home}"
-          ExecStartPre=/usr/bin/etcdctl --endpoints "${etcd_endpoints}" --ca-file ${ca_file} --key-file ${key_file} --cert-file ${cert_file} set /coreos.com/network/config '{ "Network": "${cluster_cidr}" }'
+          ExecStartPre=/usr/bin/etcdctl --endpoints "${etcd_endpoints}" --ca-file ${ca_file} --key-file ${key_file} --cert-file ${cert_file} set /coreos.com/network/config '{ "Network": "${cluster_cidr}", "Backend":{"Type":"vxlan"} }'
           Restart=on-failure
           RestartSec=5
     - name: docker.service
