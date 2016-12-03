@@ -1,0 +1,16 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: ticker
+spec:
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        run: ticker
+    spec:
+      containers:
+      - name: ticker
+        image: "ubuntu:wily"
+        command: ["/bin/bash", "-c"]
+        args: ['for ((i = 0;  ; i++)); do echo "$i: $(date)"; sleep 1; done']
