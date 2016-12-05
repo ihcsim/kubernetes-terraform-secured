@@ -9,12 +9,13 @@ This project shows you how to deploy a secured Kubernetes cluster on DigitalOcea
   * [Cluster Verification](#cluster-verification)
 * [Known Issues](#known-issues)
 * [Cluster Architecture](#cluster-architecture)
-	* [Service Management](#service-management)
-	* [TLS](#tls)
-	* [Authentication](#authentication)
-	* [Authorization](#authorization)
-	* [Admission Control](#admission-control)
-	* [DNS](#dns)
+  * [Service Management](#service-management)
+  * [TLS](#tls)
+  * [Authentication](#authentication)
+  * [Authorization](#authorization)
+  * [Admission Control](#admission-control)
+  * [Network](#network)
+  * [DNS](#dns)
 
 ## Getting Started
 

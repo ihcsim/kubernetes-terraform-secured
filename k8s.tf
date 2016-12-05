@@ -22,7 +22,7 @@ resource "digitalocean_droplet" "k8s_master" {
   connection {
     user = "${var.droplet_ssh_user}"
     private_key = "${file(var.droplet_private_key_file)}"
-	}
+  }
 
   provisioner "remote-exec" {
     inline = [
@@ -36,20 +36,20 @@ resource "digitalocean_droplet" "k8s_master" {
     ]
   }
 
-	provisioner "file" {
-		content = "${data.template_file.unit_file_apiserver.rendered}"
-		destination = "${var.k8s_unit_files_home}/kube-apiserver.service"
-	}
+  provisioner "file" {
+    content = "${data.template_file.unit_file_apiserver.rendered}"
+    destination = "${var.k8s_unit_files_home}/kube-apiserver.service"
+  }
 
   provisioner "file" {
-		content = "${data.template_file.unit_file_controller.rendered}"
-		destination = "${var.k8s_unit_files_home}/kube-controller-manager.service"
+    content = "${data.template_file.unit_file_controller.rendered}"
+    destination = "${var.k8s_unit_files_home}/kube-controller-manager.service"
   }
 
   provisioner "file" {
     content = "${data.template_file.unit_file_scheduler.rendered}"
-		destination = "${var.k8s_unit_files_home}/kube-scheduler.service"
-	}
+    destination = "${var.k8s_unit_files_home}/kube-scheduler.service"
+  }
 
   provisioner "file" {
     content = "${data.template_file.auth_policy_file.rendered}"
@@ -105,7 +105,7 @@ EOF",
 ${tls_private_key.client_key.private_key_pem}
 EOF",
       "sudo systemctl enable ${var.k8s_unit_files_home}/*",
-      "sudo systemctl restart kube-apiserver kube-controller-manager kube-scheduler"
+      "sudo systemctl start kube-apiserver kube-controller-manager kube-scheduler"
     ]
   }
 }
@@ -339,61 +339,3 @@ resource "tls_locally_signed_cert" "k8s_cert" {
   ]
   early_renewal_hours = "${var.tls_cluster_cert_early_renewal_hours}"
 }
-
-/*
-resource "null_resource" "dns" {
-  triggers {
-    id = "${digitalocean_droplet.k8s_master.id}"
-  }
-
-  connection {
-    host = "${digitalocean_droplet.k8s_master.ipv4_address}"
-    user = "${var.do_ssh_user}"
-    private_key = "${file(var.do_ssh_private_key)}"
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "sudo mkdir -p ${var.k8s_dns_home}",
-      "sudo chown core ${var.k8s_dns_home}"
-    ]
-  }
-
-  provisioner "file" {
-		content = "${data.template_file.k8s_dns_service_file.rendered}"
-		destination = "${var.k8s_dns_service_file}"
-	}
-
-	provisioner "file" {
-		content = "${data.template_file.k8s_dns_deployment_file.rendered}"
-		destination = "${var.k8s_dns_deployment_file}"
-	}
-
-  provisioner "remote-exec" {
-    inline = [
-			"./kubectl config set-cluster ${var.k8s_cluster_name} --server=http://${digitalocean_droplet.k8s_master.ipv4_address_private}:${var.k8s_apiserver_insecure_port}",
-			"./kubectl config set-credentials ${var.k8s_auth_admin_user} --token ${var.k8s_auth_admin_token}",
-			"./kubectl config set-context default-context --cluster=${var.k8s_cluster_name} --user=${var.k8s_auth_admin_user}",
-			"./kubectl config use-context default-context",
-      "./kubectl create -f ${var.k8s_dns_service_file}",
-      "./kubectl create -f ${var.k8s_dns_deployment_file}"
-    ]
-  }
-}
-
-data "template_file" "k8s_dns_service_file" {
-	template = "${file("${path.module}/k8s/master/dns/service.yml")}"
-
-	vars {
-		cluster_dns_ip = "${var.k8s_cluster_dns_ip}"
-	}
-}
-
-data "template_file" "k8s_dns_deployment_file" {
-	template = "${file("${path.module}/k8s/master/dns/deployment.yml")}"
-
-	vars {
-		cluster_domain = "${var.k8s_cluster_domain}"
-    kube_master_url = "${format("http://%s:%s", digitalocean_droplet.k8s_master.ipv4_address, var.k8s_apiserver_insecure_port)}"
-	}
-}*/

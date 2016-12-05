@@ -65,8 +65,8 @@ data "template_file" "etcd_cloud_config" {
 }
 
 resource "tls_private_key" "etcd_key" {
-	algorithm = "RSA"
-	rsa_bits = 2048
+  algorithm = "RSA"
+  rsa_bits = 2048
 }
 
 resource "tls_cert_request" "etcd_csr" {

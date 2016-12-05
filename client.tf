@@ -12,11 +12,11 @@ resource "null_resource" "kubectl_config_master" {
 
   provisioner "remote-exec" {
     inline = [
-   		"${var.k8s_bin_home}/kubectl config set-cluster ${var.k8s_cluster_name} --server=https://${digitalocean_droplet.k8s_master.ipv4_address_private}:${var.k8s_apiserver_secure_port} --certificate-authority=${var.k8s_ca_file}",
-   		"${var.k8s_bin_home}/kubectl config set-credentials admin --client-certificate=${var.k8s_client_cert_file} --client-key=${var.k8s_client_key_file}",
-   		"${var.k8s_bin_home}/kubectl config set-context admin --cluster=${var.k8s_cluster_name} --user=admin",
-   		"${var.k8s_bin_home}/kubectl config use-context admin"
-		]
+      "${var.k8s_bin_home}/kubectl config set-cluster ${var.k8s_cluster_name} --server=https://${digitalocean_droplet.k8s_master.ipv4_address_private}:${var.k8s_apiserver_secure_port} --certificate-authority=${var.k8s_ca_file}",
+      "${var.k8s_bin_home}/kubectl config set-credentials admin --client-certificate=${var.k8s_client_cert_file} --client-key=${var.k8s_client_key_file}",
+      "${var.k8s_bin_home}/kubectl config set-context admin --cluster=${var.k8s_cluster_name} --user=admin",
+      "${var.k8s_bin_home}/kubectl config use-context admin"
+    ]
   }
 }
 
