@@ -16,6 +16,7 @@ coreos:
     etcd_certfile: ${cert_file}
     etcd_keyfile: ${key_file}
     interface: $public_ipv4
+    ip_masq: true
 
   locksmith:
     endpoint: ${etcd_endpoints}

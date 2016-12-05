@@ -321,11 +321,3 @@ variable "k8s_dns_service_file" {
 variable "k8s_dns_deployment_file" {
   default = "/opt/k8s/dns/deployment.yml"
 }
-
-variable "cni_home" {
-  default = "/opt/cni"
-}
-
-variable "cni_version" {
-  default = "07a8a28637e97b22eb8dfe710eeae1344f69d16e"
-}

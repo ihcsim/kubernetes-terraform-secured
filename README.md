@@ -1,6 +1,6 @@
 # kubernetes-terraform-secured
 
-This project shows you how to deploy a secured Kubernetes cluster on DigitalOcean. The instructions here are based on [Kelsey Hightower's _Kubernetes The Hard Way_](https://github.com/kelseyhightower/kubernetes-the-hard-way), [DigitalOcean's _How To Install And Configure Kubernetes On Top Of A CoreOS Cluster_](https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-kubernetes-on-top-of-a-coreos-cluster) and [CoreOS's CoreOS + Kubernetes Step By Step](https://coreos.com/kubernetes/docs/latest/getting-started.html). Terraform v0.7.10 is used to automate the deployment of a Kubernetes 1.4.0 cluster.
+This project shows you how to deploy a secured Kubernetes cluster on DigitalOcean. The instructions here are based on [Kelsey Hightower's _Kubernetes The Hard Way_](https://github.com/kelseyhightower/kubernetes-the-hard-way), [DigitalOcean's _How To Install And Configure Kubernetes On Top Of A CoreOS Cluster_](https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-kubernetes-on-top-of-a-coreos-cluster) and [CoreOS's _CoreOS + Kubernetes Step By Step_](https://coreos.com/kubernetes/docs/latest/getting-started.html). Terraform v0.7.10 is used to automate the deployment of a Kubernetes 1.4.0 cluster.
 
 ## Table of Content
 
@@ -323,8 +323,11 @@ As [recommended](http://kubernetes.io/docs/admin/admission-controllers/#is-there
 
 This configuration is defined in the `k8s/master/unit-files/kube-apiserver` unit file.
 
-### Networking
-Flannel
+### Network
+The Pod IP range is defined by the `k8s_cluster_cidr` variable. [Flannel](https://github.com/coreos/flannel) is used to provide an overlay network to manage this IP range.
+
+
+
 Kubernetes network plugin
 
 ### DNS

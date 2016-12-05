@@ -201,6 +201,8 @@ data "template_file" "token_auth_file" {
 }
 
 resource "digitalocean_droplet" "k8s_worker" {
+  depends_on = ["digitalocean_droplet.k8s_master"]
+
   count = "${var.k8s_worker_count}"
   name = "${format("${var.k8s_worker_hostname}-%02d", count.index)}"
   image = "${var.coreos_image}"
@@ -211,16 +213,8 @@ resource "digitalocean_droplet" "k8s_worker" {
   user_data = "${data.template_file.k8s_cloud_config.rendered}"
 
   connection {
-	  user = "${var.droplet_ssh_user}"
-		private_key = "${file(var.droplet_private_key_file)}"
-	}
-
-  provisioner "remote-exec" {
-    inline = [
-      "sudo mkdir -p ${var.cni_home}",
-      "wget https://storage.googleapis.com/kubernetes-release/network-plugins/cni-${var.cni_version}.tar.gz",
-      "sudo tar -xvf cni-${var.cni_version}.tar.gz -C ${var.cni_home}"
-    ]
+    user = "${var.droplet_ssh_user}"
+    private_key = "${file(var.droplet_private_key_file)}"
   }
 
   provisioner "remote-exec" {
@@ -286,9 +280,8 @@ data "template_file" "unit_file_kubelet" {
 
   vars {
     cert_file = "${var.k8s_cert_file}"
-		cluster_dns_ip = "${var.k8s_cluster_dns_ip}"
-		cluster_domain = "${var.k8s_cluster_domain}"
-    cni_home = "${var.cni_home}"
+    cluster_dns_ip = "${var.k8s_cluster_dns_ip}"
+    cluster_domain = "${var.k8s_cluster_domain}"
     key_file = "${var.k8s_key_file}"
     kubeconfig_path = "${var.k8s_kubeconfig_file}"
     lib_home = "${var.k8s_lib_home}"
