@@ -1,6 +1,6 @@
 # kubernetes-terraform-secured
 
-This project shows you how to deploy a secured Kubernetes cluster on DigitalOcean. The instructions here are based on [Kelsey Hightower's _Kubernetes The Hard Way_](https://github.com/kelseyhightower/kubernetes-the-hard-way), [DigitalOcean's _How To Install And Configure Kubernetes On Top Of A CoreOS Cluster_](https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-kubernetes-on-top-of-a-coreos-cluster) and [CoreOS's _CoreOS + Kubernetes Step By Step_](https://coreos.com/kubernetes/docs/latest/getting-started.html). Terraform v0.7.10 is used to automate the deployment of a Kubernetes 1.4.0 cluster.
+This project shows you how to deploy a secured Kubernetes cluster on DigitalOcean. The instructions here are based on [Kelsey Hightower's _Kubernetes The Hard Way_](https://github.com/kelseyhightower/kubernetes-the-hard-way), [DigitalOcean's _How To Install And Configure Kubernetes On Top Of A CoreOS Cluster_](https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-kubernetes-on-top-of-a-coreos-cluster) and [CoreOS's _CoreOS + Kubernetes Step By Step_](https://coreos.com/kubernetes/docs/latest/getting-started.html). [Terraform v0.7.10](https://www.terraform.io/) is used to automate the deployment of a Kubernetes 1.4.0 cluster.
 
 ## Table of Content
 
@@ -25,7 +25,7 @@ By default, the cluster is comprised of 3 etcd instances, 1 Kubernetes Master an
 * `etcd_count`
 * `k8s_worker_count`
 
-Prior to running Terraform to set up the cluster, create a copy of the `terraform.tfvars` file based on the provided `terraform.tfvars.sample` file. The description of all these variables are found in the `vars.tf` file. This file declaress all the variables used by Terraform to set up the cluster. Once all the no-default variables are provided, run:
+Prior to running Terraform to set up the cluster, create a copy of the `terraform.tfvars` file based on the provided `terraform.tfvars.sample` file. The description of all these variables are found in the `vars.tf` file. This file declares all the variables used by Terraform to set up the cluster. Once all the non-default variables are provided, run:
 ```sh
 $ terraform apply
 ```
@@ -44,7 +44,9 @@ State path: terraform.tfstate
 
 Outputs:
 
+Kubernetes Dashboard = https://xxx.xxx.xxx.xxx:xxxx/ui
 Kubernetes Master = https://xxx.xxx.xxx.xxx:xxxx
+Kubernetes Swagger Docs = https://xxx.xxx.xxx.xxx/swagger-ui
 etcd = [
     https://xxx.xxx.xxx.xxx:xxxx,
     https://xxx.xxx.xxx.xxx:xxxx,
@@ -52,10 +54,13 @@ etcd = [
 ]
 ```
 
+The Kubernetes Dashboard and Swagger UI are accessible using a web browser at `https://<k8s-master-public-ip>:6443/ui` and `https://<k8s-master-public-ip>/swagger-ui`, respectively. The default basic username is `admin`, with the password specified by the `k8s.apiserver_basic_auth_admin` variable. Note that your web browser will likely generate some certificate-related warnings, complaining that the certificates aren't trusted. This is expected since the TLS certifcates are signed by a self-generated CA.
+
 ### Client Configuration
 Since all external and internal communication are secured by SSL/TLS, we will need to provide clients (such as `kubectl`, `etcdctl`, `curl`) with:
+
 1. The cluster's Certificate Authority to verify messages received from the cluster,
-1. The RSA private key and TLS certificate signed by the cluster's CA to encrypt messages send to the cluster.
+1. A client-side RSA private key and TLS certificate that are signed by the cluster's CA, to encrypt messages and authenticate with the cluster.
 
 For ease of use, the `local.tf` script will output the following TLS artifacts to a local git-ignored `.tls` folder:
 
@@ -63,11 +68,11 @@ TLS Artifacts     | Description
 ----------------- | -----------
 `ca.pem`          | The Certificate Authority of the cluster.
 `client-cert.pem` | The TLS certificate that can be used by any clients. This certificate is signed by the cluster's CA.
-`client-key.pem`  | The RSA key that can be used by any clients.
+`client-key.pem`  | The RSA key that can be used by any clients. This is the key used to generate `client-cert.pem`.
 `etcd-cert.pem`   | The TLS certificate that can be used by `etcdctl`. This certificate is signed by the cluster's CA.
-`etcd-key.pem`    | The RSA key that can be used by `etcdctl`.
+`etcd-key.pem`    | The RSA key that can be used by `etcdctl`. This is the key used to generate `etcd-cert.pem`.
 
-If you don't want any TLS artifacts that be generated locally, comment out the resource definitions in the `local.tf` file.
+If you don't want any TLS artifacts to be saved locally, comment out the resource definitions in the `local.tf` file.
 
 To help maintain sane CLI options with `etcdctl`, you can create an environment file to export these variables:
 ```sh
@@ -175,9 +180,7 @@ etcd-1               Unhealthy   Get https://xxx.xxx.xxx.xxx:xxxx/health: remote
 $ kubectl get nodes
 xxx.xxx.xxx.xxx    Ready      6m
 xxx.xxx.xxx.xxx    Ready      6m
-``
-
-The Kubernetes dashboard is accessible via a web browser at https://<k8s-master-public-ip>:6443/ui. The default username is `admin`, with the password specified by the `k8s.apiserver_basic_auth_admin` variable.
+```
 
 Test the Kubernetes cluster further by deploying some applications to it:
 ```sh
@@ -275,7 +278,7 @@ At the time of this writing, the following is a list of known Kubernetes issue s
 ## Cluster Architecture
 
 ### Service Management
-The Kubernetes cluster and all the supporting services (docker, [etcd](https://github.com/coreos/etcd), [fleet](https://github.com/coreos/fleet), [flannel](https://github.com/coreos/flannel) and [locksmith](https://github.com/coreos/locksmith)) are managed by [systemd](https://www.freedesktop.org/wiki/Software/systemd/) on CoreOS. The [cloud-config](https://coreos.com/os/docs/latest/cloud-config.html) files used to declare these services are found in the `etcd/` and `k8s/` folders.
+The Kubernetes cluster and all the supporting services ([docker](https://www.docker.com/), [etcd](https://github.com/coreos/etcd), [fleet](https://github.com/coreos/fleet), [flannel](https://github.com/coreos/flannel) and [locksmith](https://github.com/coreos/locksmith)) are managed by [systemd](https://www.freedesktop.org/wiki/Software/systemd/) on CoreOS. The [cloud-config](https://coreos.com/os/docs/latest/cloud-config.html) files used to declare these services are found in the `etcd/` and `k8s/` folders.
 
 ### TLS
 **This set-up uses the Terraform [TLS Provider](https://www.terraform.io/docs/providers/tls/index.html) to generate RSA private keys, CSR and certificates for development purposes only. The resources generated will be saved in the Terraform state file as plain text. Make sure the Terraform state file is stored securely.**
@@ -302,16 +305,16 @@ Authorization: Bearer 31ada4fd-adec-460c-809a-9e56ceb7526
 ```
 For more information on the bearer token authentication strategy, refer to the docs [here](http://kubernetes.io/docs/admin/authentication/#static-token-file).
 
-The `k8s/master/auth/basic` file contains the Basic authentication password for the `admin` user, used to access the cluster UI at https://<k8s-master-public-ip>:<secure-port>/ui. The password value can be specified using the `k8s_apiserver_basic_auth_admin` variable.
+The `k8s/master/auth/basic` file contains the Basic authentication password for the `admin` user, used to access the cluster UI at `https://<k8s-master-public-ip>:<secure-port>/ui`. The password value can be specified using the `k8s_apiserver_basic_auth_admin` variable.
 
-The Kubelet authenticates with the API Server using the token-based approach, where the `kubelet` user's token is specified in the Kubelet's `kubeconfig` file.
+The Kubelet authenticates with the API Server using the token-based approach, where the `kubelet` user's token is specified in the Kubelet's `kubeconfig` file. The template for this `kubeconfig` file can be found in the `k8s/workers` folder.
 
 The Controller Manager uses the RSA private key `k8s_key` to sign any bearer tokens for all new non-default service accounts. The resource for this key is declared in the `k8s.tf` file.
 
 ### Authorization
-HTTP requests sent to the API Server's secure port are authorized using the [_Attribute-Based Access COntrol_ (ABAC)](http://kubernetes.io/docs/admin/authorization/) authorization scheme. The authorization policy file is provided to the API Server using the `--authorization-policy-file=SOMEFILE` option as seen in the `k8s/master/unit-files/kube-apiserver.service` unit file.
+HTTP requests sent to the API Server's secure port are authorized using the [_Attribute-Based Access Control_ (ABAC)](http://kubernetes.io/docs/admin/authorization/) authorization scheme. The authorization policy file is provided to the API Server using the `--authorization-policy-file=SOMEFILE` option as seen in the `k8s/master/unit-files/kube-apiserver.service` unit file.
 
-In this set-up, 5 policy objects are provided; one policy for each user defined in the `k8s/master/auth/token.csv` file, one `*` policy and one service account policy. The `admin`, `scheduler` and `kubelet` users are authorized to access all resources (such as pods) and API groups (such as `extensions`) in all namespaces. Non-resource paths (such as `/version` and `/apis`) are read-only accessible by any users. The service account group has access to all resources, API groups and non-resource paths in all namespaces.
+In this set-up, 4 policy objects are provided; one policy for each user defined in the `k8s/master/auth/token.csv` file, one `*` policy and one service account policy. The `admin` and `kubelet` users are authorized to access all resources (such as pods) and API groups (such as `extensions`) in all namespaces. Non-resource paths (such as `/version` and `/apis`) are read-only accessible by any users. The service account group has access to all resources, API groups and non-resource paths in all namespaces.
 
 ### Admission Control
 As [recommended](http://kubernetes.io/docs/admin/admission-controllers/#is-there-a-recommended-set-of-plug-ins-to-use), the API Server is started with the following admission controllers:
@@ -325,14 +328,10 @@ As [recommended](http://kubernetes.io/docs/admin/admission-controllers/#is-there
 This configuration is defined in the `k8s/master/unit-files/kube-apiserver` unit file.
 
 ### Network
-The Pod IP range is defined by the `k8s_cluster_cidr` variable. [Flannel](https://github.com/coreos/flannel) is used to provide an overlay network to manage this IP range.
-
-
-
-Kubernetes network plugin
+[Flannel](https://github.com/coreos/flannel) is used to provide an overlay network to support cross-node traffic among pods. The Pod IP range is defined by the `k8s_cluster_cidr` variable. I attempted to run the Flannel CNI plugin as described [here](https://github.com/containernetworking/cni/blob/master/Documentation/flannel.md), using the bits from https://storage.googleapis.com/kubernetes-release/network-plugins/cni-07a8a28637e97b22eb8dfe710eeae1344f69d16e.tar.gz. It looks like the only way to get this to work at the time of this writing is to set up the Flannel CNI to delegate to Calico, as detailed in the CoreOS's [docs](https://coreos.com/kubernetes/docs/latest/deploy-master.html#set-up-the-cni-config-optional).
 
 ### DNS
-SkyDNS
+[KubeDNS](https://github.com/kubernetes/kubernetes/tree/master/cluster/addons/dns) is deployed to enable cluster DNS. The corresponding service and deployment definitions are found in the `apps.tf` file.
 
 ## LICENSE
 
