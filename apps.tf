@@ -28,10 +28,28 @@ resource "null_resource" "kube_system_apps" {
     destination = "${var.k8s_apps_home}/dashboard.yml"
   }
 
+  provisioner "file" {
+    content = "${data.template_file.deployment_heapster.rendered}"
+    destination = "${var.k8s_apps_home}/heapster.yml"
+  }
+
+  provisioner "file" {
+    source = "${path.module}/apps/heapster/grafana.yml"
+    destination = "${var.k8s_apps_home}/grafana.yml"
+  }
+
+  provisioner "file" {
+    source = "${path.module}/apps/heapster/influxdb.yml"
+    destination = "${var.k8s_apps_home}/influxdb.yml"
+  }
+
   provisioner "remote-exec" {
     inline = [
       "${var.k8s_bin_home}/kubectl create -f ${var.k8s_apps_home}/kubedns.yml",
-      "${var.k8s_bin_home}/kubectl create -f ${var.k8s_apps_home}/dashboard.yml"
+      "${var.k8s_bin_home}/kubectl create -f ${var.k8s_apps_home}/dashboard.yml",
+      "${var.k8s_bin_home}/kubectl create -f ${var.k8s_apps_home}/influxdb.yml",
+      "${var.k8s_bin_home}/kubectl create -f ${var.k8s_apps_home}/grafana.yml",
+      "${var.k8s_bin_home}/kubectl create -f ${var.k8s_apps_home}/heapster.yml"
     ]
   }
 }
@@ -58,3 +76,10 @@ data "template_file" "deployment_dashboard" {
   }
 }
 
+data "template_file" "deployment_heapster" {
+  template = "${file("${path.module}/apps/heapster/heapster.yml")}"
+
+  vars {
+    apiserver_endpoint = "${format("https://%s:%s", digitalocean_droplet.k8s_master.ipv4_address, var.k8s_apiserver_secure_port)}"
+  }
+}

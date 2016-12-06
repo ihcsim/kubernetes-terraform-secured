@@ -25,6 +25,8 @@ By default, the cluster is comprised of 3 etcd instances, 1 Kubernetes Master an
 * `etcd_count`
 * `k8s_worker_count`
 
+After the `k8s-master` droplet is created, the `apps.tf` script deploys KubeDNS, Kubernetes Dashboard and Heapster (back by InfluxDB and Grafana) to the cluster. It might take a few minutes after the pods deployment for the resource monitoring graphs to show up.
+
 Prior to running Terraform to set up the cluster, create a copy of the `terraform.tfvars` file based on the provided `terraform.tfvars.sample` file. The description of all these variables are found in the `vars.tf` file. This file declares all the variables used by Terraform to set up the cluster. Once all the non-default variables are provided, run:
 ```sh
 $ terraform apply
@@ -332,8 +334,7 @@ This configuration is defined in the `k8s/master/unit-files/kube-apiserver` unit
 [Flannel](https://github.com/coreos/flannel) is used to provide an overlay network to support cross-node traffic among pods. The Pod IP range is defined by the `k8s_cluster_cidr` variable. I attempted to run the Flannel CNI plugin as described [here](https://github.com/containernetworking/cni/blob/master/Documentation/flannel.md), using the bits from https://storage.googleapis.com/kubernetes-release/network-plugins/cni-07a8a28637e97b22eb8dfe710eeae1344f69d16e.tar.gz. It looks like the only way to get this to work at the time of this writing is to set up the Flannel CNI to delegate to Calico, as detailed in the CoreOS's [docs](https://coreos.com/kubernetes/docs/latest/deploy-master.html#set-up-the-cni-config-optional).
 
 ### DNS
-[KubeDNS](https://github.com/kubernetes/kubernetes/tree/master/cluster/addons/dns) is deployed to enable cluster DNS. The corresponding service and deployment definitions are found in the `apps.tf` file. The `apps/guestbook-go` app serves to demonstrate that the inter-pods DNS resolution is working correctly, because the Redis slaves is set up to be `slavesof` the Redis master via the master service's DNS name.
+[KubeDNS](https://github.com/kubernetes/kubernetes/tree/master/cluster/addons/dns) is deployed to enable cluster DNS. The corresponding service and deployment definitions are found in the `apps.tf` file. In order for Heapster and the guestbook-go apps to work, the inter-pods DNS resolution must be available.
 
 ## LICENSE
-
 See the [LICENSE](LICENSE) file for the full license text.
