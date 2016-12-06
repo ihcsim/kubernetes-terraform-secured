@@ -236,8 +236,9 @@ Commercial support is available at
 </body>
 </html>
 
-$ kubectl create -f apps/guestbook/redis.yml
-$ kubectl create -f apps/guestbook/frontend.yml
+$ kubectl create -f apps/guestbook-go/redis-master.yml
+$ kubectl create -f apps/guestbook-go/redis-slave.yml
+$ kubectl create -f apps/guestbook-go/guestbook.yml
 $ curl http://<k8s_worker_public_ip>:32100/
 <html ng-app="redis">
   <head>
@@ -331,7 +332,7 @@ This configuration is defined in the `k8s/master/unit-files/kube-apiserver` unit
 [Flannel](https://github.com/coreos/flannel) is used to provide an overlay network to support cross-node traffic among pods. The Pod IP range is defined by the `k8s_cluster_cidr` variable. I attempted to run the Flannel CNI plugin as described [here](https://github.com/containernetworking/cni/blob/master/Documentation/flannel.md), using the bits from https://storage.googleapis.com/kubernetes-release/network-plugins/cni-07a8a28637e97b22eb8dfe710eeae1344f69d16e.tar.gz. It looks like the only way to get this to work at the time of this writing is to set up the Flannel CNI to delegate to Calico, as detailed in the CoreOS's [docs](https://coreos.com/kubernetes/docs/latest/deploy-master.html#set-up-the-cni-config-optional).
 
 ### DNS
-[KubeDNS](https://github.com/kubernetes/kubernetes/tree/master/cluster/addons/dns) is deployed to enable cluster DNS. The corresponding service and deployment definitions are found in the `apps.tf` file.
+[KubeDNS](https://github.com/kubernetes/kubernetes/tree/master/cluster/addons/dns) is deployed to enable cluster DNS. The corresponding service and deployment definitions are found in the `apps.tf` file. The `apps/guestbook-go` app serves to demonstrate that the inter-pods DNS resolution is working correctly, because the Redis slaves is set up to be `slavesof` the Redis master via the master service's DNS name.
 
 ## LICENSE
 
