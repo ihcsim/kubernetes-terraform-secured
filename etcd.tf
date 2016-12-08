@@ -6,7 +6,7 @@ resource "digitalocean_droplet" "etcd" {
   name = "${format("etcd-%02d", count.index)}"
   image = "${var.coreos_image}"
   region = "${var.droplet_region}"
-  size = "512MB"
+  size = "1GB"
   count = "${var.etcd_count}"
   private_networking = "true"
   ssh_keys = ["${var.droplet_private_key_id}"]
