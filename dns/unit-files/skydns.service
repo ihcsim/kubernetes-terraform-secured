@@ -1,0 +1,20 @@
+[Unit]
+Description=SkyDNS
+Documentation=https://github.com/skynetservices/skydns
+
+[Service]
+EnvironmentFile=/etc/environment
+ExecStartPre=/usr/bin/etcdctl --endpoints ${etcd_endpoints} --ca-file ${ca_file} --key-file ${key_file} --cert-file ${cert_file} set /skydns/config '{"dns_addr":"$${COREOS_PRIVATE_IPV4}:53", "domain":"${domain}", "local":"${service_name}"}'
+ExecStart=/opt/skydns/bin/skydns-${skydns_version} \
+  -machines=${etcd_endpoints} \
+  -ca-cert=${ca_file} \
+  -tls-key=${key_file} \
+  -tls-pem=${cert_file} \
+  -verbose
+ExecStartPost=/usr/bin/etcdctl --endpoints ${etcd_endpoints} --ca-file ${ca_file} --key-file ${key_file} --cert-file ${cert_file} set ${service_key_path} '{"host":"$${COREOS_PRIVATE_IPV4}"}'
+Restart=on-failure
+RestartSec=5
+TimeoutSec=20
+
+[Install]
+WantedBy=multi-user.target

@@ -126,6 +126,11 @@ variable "droplet_region" {
   default = "sfo2"
 }
 
+variable "droplet_domain" {
+  default = "coreos.local"
+  description = "All droplets will be assigned FQDN in the form of <name>.<region>.<droplet_domain>."
+}
+
 variable "coreos_image" {
   default = "coreos-stable"
 }
@@ -320,4 +325,41 @@ variable "k8s_dns_service_file" {
 
 variable "k8s_dns_deployment_file" {
   default = "/opt/k8s/dns/deployment.yml"
+}
+
+variable "skydns_version" {
+  default = "2.5.3a"
+}
+
+variable "skydns_home" {
+  default = "/opt/skydns"
+}
+
+variable "skydns_bin_home" {
+  default = "/opt/skydns/bin"
+}
+
+variable "skydns_unit_files_home" {
+  default = "/opt/skydns/unit-files"
+}
+
+variable "skydns_tls_home" {
+  default = "/opt/skydns/tls"
+}
+
+variable "skydns_ca_file" {
+  default = "/opt/skydns/tls/ca.pem"
+}
+
+variable "skydns_cert_file" {
+  default = "/opt/skydns/tls/cert.pem"
+}
+
+variable "skydns_key_file" {
+  default = "/opt/skydns/tls/key.pem"
+}
+
+variable "skydns_domain_key_path" {
+  default = "/skydns/local/coreos"
+  description = "The path to all the DNS record keys in etcd. This is the concentation of the pat prefix and the reverse of the droplet_domain. Refer to the https://github.com/skynetservices/skydns docs for more information."
 }

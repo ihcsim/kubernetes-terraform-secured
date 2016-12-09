@@ -1,0 +1,34 @@
+#cloud-config
+
+coreos:
+  fleet:
+    etcd_servers: ${etcd_endpoints}
+    etcd_request_timeout: ${fleet_etcd_request_timeout}
+    etcd_cafile: ${ca_file}
+    etcd_certfile: ${cert_file}
+    etcd_keyfile: ${key_file}
+    agent_ttl: ${fleet_agent_ttl}
+    public_ip: $private_ipv4
+
+  locksmith:
+    endpoint: ${etcd_endpoints}
+    etcd_cafile: ${ca_file}
+    etcd_certfile: ${cert_file}
+    etcd_keyfile: ${key_file}
+
+  update:
+    reboot-strategy: "etcd-lock"
+
+  units:
+  - name: fleet.service
+    command: start
+    enable: true
+
+write_files:
+- path: "/etc/profile.env"
+  owner: "root"
+  content: |
+    export ETCDCTL_ENDPOINTS=${etcd_endpoints}
+    export ETCDCTL_CERT_FILE=${cert_file}
+    export ETCDCTL_KEY_FILE=${key_file}
+    export ETCDCTL_CA_FILE=${ca_file}
