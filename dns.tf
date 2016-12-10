@@ -17,7 +17,8 @@ resource "digitalocean_droplet" "skydns" {
       "sudo mkdir -p ${var.skydns_home} ${var.skydns_bin_home} ${var.skydns_unit_files_home}",
       "sudo chown -R core:core ${var.skydns_home}",
       "wget -P ${var.skydns_bin_home} https://s3-us-west-2.amazonaws.com/kubernetes-terraform-secured/skydns-${var.skydns_version}",
-      "chmod +x ${var.skydns_bin_home}/*"
+      "chmod +x ${var.skydns_bin_home}/*",
+      "sudo systemctl restart systemd-resolved"
     ]
   }
 
@@ -64,10 +65,12 @@ data "template_file" "skydns_cloud_config" {
   vars {
     ca_file = "${var.skydns_ca_file}"
     cert_file = "${var.skydns_cert_file}"
+    domain = "${var.droplet_domain}"
     etcd_endpoints  = "${join(",", formatlist("https://%s:%s", digitalocean_droplet.etcd.*.ipv4_address_private, var.etcd_client_port))}"
     fleet_agent_ttl = "${var.fleet_agent_ttl}"
     fleet_etcd_request_timeout = "${var.fleet_etcd_request_timeout}"
     key_file = "${var.skydns_key_file}"
+    resolv_file = "${var.droplet_resolv_file}"
   }
 }
 

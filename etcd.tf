@@ -1,13 +1,13 @@
 output "etcd" {
-  value = "${formatlist("https://%s:%s", digitalocean_droplet.etcd.*.ipv4_address, var.etcd_client_port)}"
+  value = "${join(",", formatlist("https://%s:%s", digitalocean_droplet.etcd.*.ipv4_address, var.etcd_client_port))}"
 }
 
 resource "digitalocean_droplet" "etcd" {
+  count = "${var.etcd_count}"
   name = "${format("etcd-%02d", count.index)}"
   image = "${var.coreos_image}"
   region = "${var.droplet_region}"
   size = "1GB"
-  count = "${var.etcd_count}"
   private_networking = "true"
   ssh_keys = ["${var.droplet_private_key_id}"]
   user_data = "${data.template_file.etcd_cloud_config.rendered}"
@@ -44,11 +44,55 @@ EOF",
   }
 }
 
+resource "null_resource" "etcd_dns" {
+  depends_on = ["digitalocean_droplet.skydns", "null_resource.etcd_tls"]
+
+  triggers {
+    etcd_droplets = "${join(",", digitalocean_droplet.etcd.*.id)}"
+    skydns_droplet = "${digitalocean_droplet.skydns.id}"
+  }
+
+  count = "${var.etcd_count}"
+  connection {
+    user = "${var.droplet_ssh_user}"
+    private_key = "${file(var.droplet_private_key_file)}"
+    host = "${element(digitalocean_droplet.etcd.*.ipv4_address, count.index)}"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo mkdir -p ${var.droplet_resolv_home}",
+      "sudo chown -R core:core ${var.droplet_resolv_home}",
+    ]
+  }
+
+  provisioner "file" {
+    content = "${data.template_file.etcd_resolv_conf.rendered}"
+    destination = "${var.droplet_resolv_file}"
+  }
+
+  provisioner "remote-exec" {
+    inline = ["sudo systemctl restart systemd-resolved",
+<<EOF
+etcdctl \
+  --endpoints https://${element(digitalocean_droplet.etcd.*.ipv4_address, count.index)}:${var.etcd_client_port} \
+  --ca-file ${var.etcd_trusted_ca_file} \
+  --key-file ${var.etcd_key_file} \
+  --cert-file ${var.etcd_cert_file} \
+set ${var.skydns_domain_key_path}/${element(digitalocean_droplet.etcd.*.name, count.index)} \
+'{"host":"${element(digitalocean_droplet.etcd.*.ipv4_address, count.index)}"}'
+EOF
+    ]
+  }
+}
+
 data "template_file" "etcd_cloud_config" {
   template = "${file("${path.module}/etcd/cloud-config")}"
 
   vars {
+    client_cert_auth = "true"
     discovery_url = "${var.etcd_discovery_url}"
+    domain = "${var.droplet_domain}"
     etcd_client_port = "${var.etcd_client_port}"
     etcd_peer_port = "${var.etcd_peer_port}"
     etcd_heartbeat_interval = "${var.etcd_heartbeat_interval}"
@@ -58,9 +102,17 @@ data "template_file" "etcd_cloud_config" {
     fleet_etcd_request_timeout = "${var.fleet_etcd_request_timeout}"
     cert_file = "${var.etcd_cert_file}"
     key_file = "${var.etcd_key_file}"
-    trusted_ca_file = "${var.etcd_trusted_ca_file}"
-    client_cert_auth = "true"
     peer_client_cert_auth = "true"
+    trusted_ca_file = "${var.etcd_trusted_ca_file}"
+  }
+}
+
+data "template_file" "etcd_resolv_conf" {
+  template = "${file("${path.module}/etcd/resolved.conf")}"
+
+  vars {
+    dns_server = "${digitalocean_droplet.skydns.ipv4_address_private}"
+    domain = "${var.droplet_domain}"
   }
 }
 

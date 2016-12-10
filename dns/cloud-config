@@ -32,3 +32,12 @@ write_files:
     export ETCDCTL_CERT_FILE=${cert_file}
     export ETCDCTL_KEY_FILE=${key_file}
     export ETCDCTL_CA_FILE=${ca_file}
+- path: "${resolv_file}"
+  owner: "root"
+  content: |
+    [Resolve]
+    DNS=$private_ipv4
+    Domains=${domain}
+    LLMNR=yes
+    DNSSEC=allow-downgrade
+    Cache=yes

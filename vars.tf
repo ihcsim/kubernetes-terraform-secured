@@ -131,6 +131,14 @@ variable "droplet_domain" {
   description = "All droplets will be assigned FQDN in the form of <name>.<region>.<droplet_domain>."
 }
 
+variable "droplet_resolv_home" {
+  default = "/etc/systemd/resolved.conf.d/"
+}
+
+variable "droplet_resolv_file" {
+  default = "/etc/systemd/resolved.conf.d/droplet.conf"
+}
+
 variable "coreos_image" {
   default = "coreos-stable"
 }
@@ -248,7 +256,7 @@ variable "k8s_cluster_dns_ip" {
 }
 
 variable "k8s_cluster_domain" {
-  default = "k8s.cloud"
+  default = "kubernetes.local"
 }
 
 variable "k8s_cluster_cidr" {
