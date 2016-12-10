@@ -37,18 +37,18 @@ coreos:
     reboot-strategy: "etcd-lock"
 
   units:
-    - name: etcd2.service
-      command: start
-      enable: true
-    - name: fleet.service
-      command: start
-      enable: true
+  - name: etcd2.service
+    command: start
+    enable: true
+  - name: fleet.service
+    command: start
+    enable: true
 
 write_files:
-  - path: "/etc/profile.env"
-    owner: "root"
-    content: |
-      export ETCDCTL_ENDPOINTS=https://$private_ipv4:${etcd_client_port}
-      export ETCDCTL_CERT_FILE=${cert_file}
-      export ETCDCTL_KEY_FILE=${key_file}
-      export ETCDCTL_CA_FILE=${trusted_ca_file}
+- path: "/etc/profile.env"
+  owner: "root"
+  content: |
+    export ETCDCTL_ENDPOINTS=https://$private_ipv4:${etcd_client_port}
+    export ETCDCTL_CERT_FILE=${cert_file}
+    export ETCDCTL_KEY_FILE=${key_file}
+    export ETCDCTL_CA_FILE=${trusted_ca_file}

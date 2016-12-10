@@ -1,4 +1,6 @@
-# set up kubectl config on k8s_master
+/*
+ * This script generate the TLS artifacts for clients such as kubectl to access the Kubernetes cluster.
+ */
 resource "null_resource" "kubectl_config_master" {
   triggers {
     master_id = "${digitalocean_droplet.k8s_master.id}"
@@ -25,7 +27,6 @@ resource "tls_private_key" "client_key" {
   rsa_bits = 2048
 }
 
-# Generate the TLS artifacts that will be used by clients such as kubectl for client cert authentication.
 resource "tls_self_signed_cert" "client_ca_cert" {
   key_algorithm = "${tls_private_key.client_key.algorithm}"
   private_key_pem = "${tls_private_key.client_key.private_key_pem}"

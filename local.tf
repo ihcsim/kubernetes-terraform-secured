@@ -1,7 +1,8 @@
 /*
-This script saves all client-side TLS artifacts into a local folder defined by the `var.local_tls_home` variable.
-Comment out this script if you don't want any of these artifacts to be output to your local machine.
+ * This script saves all client-side TLS artifacts into a local folder defined by the `var.local_tls_home` variable.
+ * Comment out this script if you don't want any of these artifacts to be output to your local machine.
  */
+
 resource "null_resource" "ca_cert" {
   triggers {
     cert = "${tls_self_signed_cert.ca_cert.cert_pem}"
