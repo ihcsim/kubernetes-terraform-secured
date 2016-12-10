@@ -123,7 +123,7 @@ variable "tls_client_cert_early_renewal_hours" {
 }
 
 variable "droplet_region" {
-  default = "sfo2"
+  default = "sfo1"
 }
 
 variable "droplet_domain" {
@@ -140,7 +140,8 @@ variable "droplet_resolv_file" {
 }
 
 variable "coreos_image" {
-  default = "coreos-stable"
+  default = "21378821"
+  description = "Image ID of CoreOS 1185.5.0."
 }
 
 variable "etcd_count" {
@@ -317,10 +318,6 @@ variable "k8s_token_auth_file" {
 
 variable "k8s_worker_count" {
   default = 2
-}
-
-variable "k8s_worker_hostname" {
-  default = "k8s-worker"
 }
 
 variable "k8s_dns_home" {

@@ -45,7 +45,7 @@ EOF",
 }
 
 resource "null_resource" "etcd_dns" {
-  depends_on = ["digitalocean_droplet.skydns", "null_resource.etcd_tls"]
+  depends_on = ["digitalocean_droplet.skydns"]
 
   triggers {
     etcd_droplets = "${join(",", digitalocean_droplet.etcd.*.id)}"
@@ -72,16 +72,9 @@ resource "null_resource" "etcd_dns" {
   }
 
   provisioner "remote-exec" {
-    inline = ["sudo systemctl restart systemd-resolved",
-<<EOF
-etcdctl \
-  --endpoints https://${element(digitalocean_droplet.etcd.*.ipv4_address, count.index)}:${var.etcd_client_port} \
-  --ca-file ${var.etcd_trusted_ca_file} \
-  --key-file ${var.etcd_key_file} \
-  --cert-file ${var.etcd_cert_file} \
-set ${var.skydns_domain_key_path}/${element(digitalocean_droplet.etcd.*.name, count.index)} \
-'{"host":"${element(digitalocean_droplet.etcd.*.ipv4_address, count.index)}"}'
-EOF
+    inline = [
+      "sudo systemctl restart systemd-resolved",
+      "etcdctl --endpoints https://${element(digitalocean_droplet.etcd.*.ipv4_address, count.index)}:${var.etcd_client_port} --ca-file ${var.etcd_trusted_ca_file} --key-file ${var.etcd_key_file} --cert-file ${var.etcd_cert_file} set ${var.skydns_domain_key_path}/${element(digitalocean_droplet.etcd.*.name, count.index)} '{\"host\":\"${element(digitalocean_droplet.etcd.*.ipv4_address, count.index)}\"}'",
     ]
   }
 }
@@ -139,6 +132,11 @@ resource "tls_cert_request" "etcd_csr" {
   ip_addresses = [
     "${digitalocean_droplet.etcd.*.ipv4_address}",
     "${digitalocean_droplet.etcd.*.ipv4_address_private}"
+  ]
+
+  dns_names = [
+    "${digitalocean_droplet.etcd.*.name}",
+    "${formatlist("%s.%s", digitalocean_droplet.etcd.*.name, var.droplet_domain)}"
   ]
 }
 

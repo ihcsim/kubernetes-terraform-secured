@@ -28,30 +28,30 @@ coreos:
     reboot-strategy: "etcd-lock"
 
   units:
-    - name: fleet.service
-      command: start
-      enable: true
-    - name: flanneld.service
-      command: start
-      enable: true
-      drop-ins:
-      - name: 50-network-config.conf
-        content: |
-          [Service]
-          EnvironmentFile=/etc/environment
-          Environment="ETCD_SSL_DIR=${tls_home}"
-          ExecStartPre=/usr/bin/etcdctl --endpoints "${etcd_endpoints}" --ca-file ${ca_file} --key-file ${key_file} --cert-file ${cert_file} set /coreos.com/network/config '{ "Network": "${cluster_cidr}", "Backend":{"Type":"vxlan"} }'
-          Restart=on-failure
-          RestartSec=5
-    - name: docker.service
-      command: start
-      enable: true
-      drop-ins:
-      - name: 40-flannel.conf
-        content: |
-          [Unit]
-          Requires=flanneld.service
-          After=flanneld.service
+  - name: fleet.service
+    command: start
+    enable: true
+  - name: flanneld.service
+    command: start
+    enable: true
+    drop-ins:
+    - name: 50-network-config.conf
+      content: |
+        [Service]
+        EnvironmentFile=/etc/environment
+        Environment="ETCD_SSL_DIR=${tls_home}"
+        ExecStartPre=/usr/bin/etcdctl --endpoints "${etcd_endpoints}" --ca-file ${ca_file} --key-file ${key_file} --cert-file ${cert_file} set /coreos.com/network/config '{ "Network": "${cluster_cidr}", "Backend":{"Type":"vxlan"} }'
+        Restart=on-failure
+        RestartSec=5
+  - name: docker.service
+    command: start
+    enable: true
+    drop-ins:
+    - name: 40-flannel.conf
+      content: |
+        [Unit]
+        Requires=flanneld.service
+        After=flanneld.service
 
 write_files:
 - path: "/etc/profile.d/k8s.sh"
@@ -65,3 +65,12 @@ write_files:
     export ETCDCTL_CERT_FILE=${cert_file}
     export ETCDCTL_KEY_FILE=${key_file}
     export ETCDCTL_CA_FILE=${ca_file}
+- path: "${resolv_file}"
+  owner: "root"
+  content: |
+    [Resolve]
+    DNS=${dns_server}
+    Domains=${domain}
+    LLMNR=yes
+    DNSSEC=allow-downgrade
+    Cache=yes

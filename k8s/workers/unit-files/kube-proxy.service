@@ -9,7 +9,6 @@ Wants=docker.service
 EnvironmentFile=/etc/environment
 ExecStart=/opt/k8s/bin/kube-proxy \
   --master=${apiserver_endpoint} \
-  --hostname-override=$${COREOS_PRIVATE_IPV4} \
   --kubeconfig=${kubeconfig_path} \
   --proxy-mode=iptables \
   --v=2

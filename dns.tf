@@ -111,7 +111,12 @@ resource "tls_cert_request" "skydns_csr" {
 
   ip_addresses = [
     "${digitalocean_droplet.skydns.ipv4_address}",
-    "${digitalocean_droplet.skydns.ipv4_address_private}",
+    "${digitalocean_droplet.skydns.ipv4_address_private}"
+  ]
+
+  dns_names = [
+    "${digitalocean_droplet.skydns.name}",
+    "${digitalocean_droplet.skydns.name}.${var.droplet_domain}",
   ]
 }
 

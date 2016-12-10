@@ -1,6 +1,6 @@
 # kubernetes-terraform-secured
 
-This project shows you how to deploy a secured Kubernetes cluster on DigitalOcean. The instructions here are based on [Kelsey Hightower's _Kubernetes The Hard Way_](https://github.com/kelseyhightower/kubernetes-the-hard-way), [DigitalOcean's _How To Install And Configure Kubernetes On Top Of A CoreOS Cluster_](https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-kubernetes-on-top-of-a-coreos-cluster) and [CoreOS's _CoreOS + Kubernetes Step By Step_](https://coreos.com/kubernetes/docs/latest/getting-started.html). [Terraform v0.7.10](https://www.terraform.io/) is used to automate the deployment of a Kubernetes 1.4.0 cluster.
+This project shows you how to deploy a secured Kubernetes cluster on DigitalOcean. The instructions here are based on [Kelsey Hightower's _Kubernetes The Hard Way_](https://github.com/kelseyhightower/kubernetes-the-hard-way), [DigitalOcean's _How To Install And Configure Kubernetes On Top Of A CoreOS Cluster_](https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-kubernetes-on-top-of-a-coreos-cluster) and [CoreOS's _CoreOS + Kubernetes Step By Step_](https://coreos.com/kubernetes/docs/latest/getting-started.html). [Terraform v0.7.10](https://www.terraform.io/) is used to automate the deployment of a Kubernetes 1.4.0 cluster, on CoreOS v1185.5.0.
 
 ## Table of Content
 
@@ -21,7 +21,7 @@ This project shows you how to deploy a secured Kubernetes cluster on DigitalOcea
 
 **Note that the droplets created as part of this tutorial aren't free.**
 
-By default, the cluster is comprised of 3 etcd instances, 1 Kubernetes Master and 2 Kubernetes Workers. You can use the following two variables found in the `vars.tf` file to change the number of etcd and Kubernetes workers instances, respectively:
+By default, the cluster is comprised of 3 etcd instances, 1 SkyDNS instance, 1 Kubernetes Master and 2 Kubernetes Workers. You can use the following two variables found in the `vars.tf` file to change the number of etcd and Kubernetes workers instances, respectively:
 * `etcd_count`
 * `k8s_worker_count`
 
@@ -334,7 +334,47 @@ This configuration is defined in the `k8s/master/unit-files/kube-apiserver` unit
 [Flannel](https://github.com/coreos/flannel) is used to provide an overlay network to support cross-node traffic among pods. The Pod IP range is defined by the `k8s_cluster_cidr` variable. I attempted to run the Flannel CNI plugin as described [here](https://github.com/containernetworking/cni/blob/master/Documentation/flannel.md), using the bits from https://storage.googleapis.com/kubernetes-release/network-plugins/cni-07a8a28637e97b22eb8dfe710eeae1344f69d16e.tar.gz. It looks like the only way to get this to work at the time of this writing is to set up the Flannel CNI to delegate to Calico, as detailed in the CoreOS's [docs](https://coreos.com/kubernetes/docs/latest/deploy-master.html#set-up-the-cni-config-optional).
 
 ### DNS
-[KubeDNS](https://github.com/kubernetes/kubernetes/tree/master/cluster/addons/dns) is deployed to enable cluster DNS. The corresponding service and deployment definitions are found in the `apps.tf` file. In order for Heapster and the guestbook-go apps to work, the inter-pods DNS resolution must be available.
+[KubeDNS](https://github.com/kubernetes/kubernetes/tree/master/cluster/addons/dns) is deployed to enable cluster DNS. The corresponding service and deployment definitions are found in the `apps.tf` file. In order for Heapster and the guestbook-go apps to work, the inter-pods DNS resolution must be available. The FQDN of all Kubernetes services are suffixed with the domain name defined by the `k8s_cluster_domain` variable.
+
+A standalone instance of [SkyDNS](https://github.com/skynetservices/skydns) is deployed to enable droplet-level DNS service announcement and resolution, under the service name `skydns`. The resource that defines the droplet is found in the `dns.tf` script. It shares the same etcd instances with Kubernetes. The `/etc/systemd/resolv.conf.d/droplet.conf` configuration file of all the droplets contain reference to this nameserver. The FQDN of all the droplets is suffixed with the domain name defined by the `droplet_domain` variable.
+
+You can use `dig` to test the droplets DNS resolution:
+```sh
+$ dig @skydns SRV any.coreos.local
+
+; <<>> DiG 9.10.2-P4 <<>> @skydns SRV any.coreos.local
+; (1 server found)
+;; global options: +cmd
+;; Got answer:
+;; ->>HEADER<<- opcode: QUERY, status: NOERROR, id: 10317
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 7, AUTHORITY: 0, ADDITIONAL: 7
+
+;; QUESTION SECTION:
+;any.coreos.local.		IN	SRV
+
+;; ANSWER SECTION:
+any.coreos.local.	3600	IN	SRV	10 14 0 k8s-worker-01.coreos.local.
+any.coreos.local.	3600	IN	SRV	10 14 0 k8s-worker-00.coreos.local.
+any.coreos.local.	3600	IN	SRV	10 14 0 k8s-master.coreos.local.
+any.coreos.local.	3600	IN	SRV	10 14 0 skydns.coreos.local.
+any.coreos.local.	3600	IN	SRV	10 14 0 etcd-02.coreos.local.
+any.coreos.local.	3600	IN	SRV	10 14 0 etcd-00.coreos.local.
+any.coreos.local.	3600	IN	SRV	10 14 0 etcd-01.coreos.local.
+
+;; ADDITIONAL SECTION:
+k8s-worker-01.coreos.local. 3600 IN	A	xx.xxx.xxx.xxx
+k8s-worker-00.coreos.local. 3600 IN	A	xx.xxx.xxx.xxx
+k8s-master.coreos.local. 3600	IN	A	xx.xxx.xxx.xxx
+skydns.coreos.local.	3600	IN	A	xx.xxx.xxx.xxx
+etcd-02.coreos.local.	3600	IN	A	xxx.xxx.xxx.xxx
+etcd-00.coreos.local.	3600	IN	A	xxx.xxx.xxx.xxx
+etcd-01.coreos.local.	3600	IN	A	xxx.xxx.xxx.xxx
+
+;; Query time: 3 msec
+;; SERVER: xxx.xxx.xxx.xxx#xx(xxx.xxx.xxx.xxx)
+;; WHEN: Sun Dec 11 05:07:30 UTC 2016
+;; MSG SIZE  rcvd: 356
+```
 
 ## LICENSE
 See the [LICENSE](LICENSE) file for the full license text.

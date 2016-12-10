@@ -1,5 +1,8 @@
+/*
+ * This script deploys a number of add-ons to the Kubernetes cluster under the kube-system namespace.
+ */
 resource "null_resource" "kube_system_apps" {
-  depends_on = ["null_resource.k8s_master_tls"]
+  depends_on = ["null_resource.k8s_master_dns", "null_resource.k8s_worker_dns"]
 
   triggers {
     master_id = "${digitalocean_droplet.k8s_master.id}"
@@ -80,6 +83,6 @@ data "template_file" "deployment_heapster" {
   template = "${file("${path.module}/apps/heapster/heapster.yml")}"
 
   vars {
-    apiserver_endpoint = "${format("https://%s:%s", digitalocean_droplet.k8s_master.ipv4_address, var.k8s_apiserver_secure_port)}"
+    apiserver_endpoint = "https://${digitalocean_droplet.k8s_master.name}:${var.k8s_apiserver_secure_port}"
   }
 }

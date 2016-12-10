@@ -1,8 +1,4 @@
-/*
-This script deploys a secured Kubernetes cluster with one master node and two workers node. The TLS artifacts are generated locally by the TLS provider and copy to the remote nodes using "null resources" after the nodes are created.
- */
-
-output "Kubernetes Master" {
+output "Kubernetes API" {
   value = "${format("https://%s:%s", digitalocean_droplet.k8s_master.ipv4_address, var.k8s_apiserver_secure_port)}"
 }
 
@@ -12,10 +8,6 @@ output "Kubernetes Dashboard" {
 
 output "Kubernetes Swagger Docs" {
   value = "${format("https://%s:%s/swagger-ui", digitalocean_droplet.k8s_master.ipv4_address, var.k8s_apiserver_secure_port)}"
-}
-
-provider "digitalocean" {
-  token = "${var.do_api_token}"
 }
 
 resource "digitalocean_droplet" "k8s_master" {
@@ -111,12 +103,34 @@ ${tls_locally_signed_cert.client_cert.cert_pem}
 EOF",
       "sudo cat <<EOF > ${var.k8s_client_key_file}
 ${tls_private_key.client_key.private_key_pem}
-EOF",
+EOF"
+    ]
+  }
+}
+
+resource "null_resource" "k8s_master_dns" {
+  depends_on = ["null_resource.k8s_master_tls"]
+
+  triggers {
+    droplet_id = "${digitalocean_droplet.k8s_master.id}"
+  }
+
+  connection {
+    user = "${var.droplet_ssh_user}"
+    private_key = "${file(var.droplet_private_key_file)}"
+    host = "${digitalocean_droplet.k8s_master.ipv4_address}"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo systemctl restart systemd-resolved",
+      "etcdctl --endpoints ${join(",", formatlist("https://%s:%s", digitalocean_droplet.etcd.*.name, var.etcd_client_port))} --ca-file ${var.k8s_ca_file} --key-file ${var.k8s_key_file} --cert-file ${var.k8s_cert_file}  set ${var.skydns_domain_key_path}/${digitalocean_droplet.k8s_master.name} '{\"host\":\"${digitalocean_droplet.k8s_master.ipv4_address_private}\"}'",
       "sudo systemctl enable ${var.k8s_unit_files_home}/*",
       "sudo systemctl start kube-apiserver kube-controller-manager kube-scheduler"
     ]
   }
 }
+
 
 data "template_file" "k8s_cloud_config" {
   template = "${file("${path.module}/k8s/cloud-config")}"
@@ -126,10 +140,13 @@ data "template_file" "k8s_cloud_config" {
     ca_file = "${var.k8s_ca_file}"
     cert_file = "${var.k8s_cert_file}"
     cluster_cidr = "${var.k8s_cluster_cidr}"
-    etcd_endpoints  = "${join(",", formatlist("https://%s:2379", digitalocean_droplet.etcd.*.ipv4_address_private))}"
+    dns_server = "${digitalocean_droplet.skydns.ipv4_address_private}"
+    domain = "${var.droplet_domain}"
+    etcd_endpoints  = "${join(",", formatlist("https://%s:%s", digitalocean_droplet.etcd.*.name, var.etcd_client_port))}"
     fleet_agent_ttl = "${var.fleet_agent_ttl}"
     fleet_etcd_request_timeout = "${var.fleet_etcd_request_timeout}"
     key_file = "${var.k8s_key_file}"
+    resolv_file = "${var.droplet_resolv_file}"
     tls_home = "${var.k8s_tls_home}"
   }
 }
@@ -145,7 +162,7 @@ data "template_file" "unit_file_apiserver" {
     client_ca_file = "${var.k8s_client_ca_file}"
     client_cert_file = "${var.k8s_client_cert_file}"
     client_key_file = "${var.k8s_client_key_file}"
-    etcd_endpoints = "${join(",", formatlist("https://%s:2379", digitalocean_droplet.etcd.*.ipv4_address_private))}"
+    etcd_endpoints = "${join(",", formatlist("https://%s:%s", digitalocean_droplet.etcd.*.name, var.etcd_client_port))}"
     insecure_port = "${var.k8s_apiserver_insecure_port}"
     key_file = "${var.k8s_key_file}"
     secure_port = "${var.k8s_apiserver_secure_port}"
@@ -180,7 +197,7 @@ data "template_file" "kubeconfig" {
   template = "${file("${path.module}/k8s/workers/kubelet-kubeconfig")}"
 
   vars {
-    apiserver_endpoint = "${format("https://%s:%s", digitalocean_droplet.k8s_master.ipv4_address_private, var.k8s_apiserver_secure_port)}"
+    apiserver_endpoint = "https://${digitalocean_droplet.k8s_master.name}:${var.k8s_apiserver_secure_port}"
     ca_file = "${var.k8s_ca_file}"
     cluster_name = "${var.k8s_cluster_name}"
     token_kubelet = "${var.k8s_apiserver_token_kubelet}"
@@ -212,7 +229,7 @@ resource "digitalocean_droplet" "k8s_worker" {
   depends_on = ["digitalocean_droplet.k8s_master"]
 
   count = "${var.k8s_worker_count}"
-  name = "${format("${var.k8s_worker_hostname}-%02d", count.index)}"
+  name = "${format("k8s-worker-%02d", count.index)}"
   image = "${var.coreos_image}"
   region = "${var.droplet_region}"
   size = "2GB"
@@ -276,7 +293,29 @@ ${tls_private_key.k8s_key.private_key_pem}
 EOF",
       "sudo cat <<EOF > ${var.k8s_ca_file}
 ${tls_self_signed_cert.ca_cert.cert_pem}
-EOF",
+EOF"
+    ]
+  }
+}
+
+resource "null_resource" "k8s_worker_dns" {
+  depends_on = ["null_resource.k8s_worker_tls"]
+
+  count = "${var.k8s_worker_count}"
+  triggers {
+    droplet_id = "${join("," , digitalocean_droplet.k8s_worker.*.id)}"
+  }
+
+  connection {
+    user = "${var.droplet_ssh_user}"
+    private_key = "${file(var.droplet_private_key_file)}"
+    host = "${element(digitalocean_droplet.k8s_worker.*.ipv4_address, count.index)}"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo systemctl restart systemd-resolved",
+      "etcdctl --endpoints ${join(",", formatlist("https://%s:%s", digitalocean_droplet.etcd.*.name, var.etcd_client_port))} --ca-file ${var.k8s_ca_file}  --key-file ${var.k8s_key_file} --cert-file ${var.k8s_cert_file} set ${var.skydns_domain_key_path}/${element(digitalocean_droplet.k8s_worker.*.name, count.index)} '{\"host\":\"${element(digitalocean_droplet.k8s_worker.*.ipv4_address_private, count.index)}\"}'",
       "sudo systemctl enable ${var.k8s_unit_files_home}/*",
       "sudo systemctl start kube-proxy kubelet"
     ]
@@ -300,8 +339,29 @@ data "template_file" "unit_file_kubeproxy" {
   template = "${file("${path.module}/k8s/workers/unit-files/kube-proxy.service")}"
 
   vars {
-    apiserver_endpoint = "${format("https://%s:%s", digitalocean_droplet.k8s_master.ipv4_address_private, var.k8s_apiserver_secure_port)}"
+    apiserver_endpoint = "https://${digitalocean_droplet.k8s_master.name}:${var.k8s_apiserver_secure_port}"
     kubeconfig_path = "${var.k8s_kubeconfig_file}"
+  }
+}
+
+resource "null_resource" "kubectl_config_master" {
+  triggers {
+    master_id = "${digitalocean_droplet.k8s_master.id}"
+  }
+
+  connection {
+    user = "${var.droplet_ssh_user}"
+    private_key = "${file(var.droplet_private_key_file)}"
+    host = "${digitalocean_droplet.k8s_master.ipv4_address}"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "${var.k8s_bin_home}/kubectl config set-cluster ${var.k8s_cluster_name} --server=https://${digitalocean_droplet.k8s_master.name}:${var.k8s_apiserver_secure_port} --certificate-authority=${var.k8s_ca_file}",
+      "${var.k8s_bin_home}/kubectl config set-credentials admin --client-certificate=${var.k8s_client_cert_file} --client-key=${var.k8s_client_key_file}",
+      "${var.k8s_bin_home}/kubectl config set-context admin --cluster=${var.k8s_cluster_name} --user=admin",
+      "${var.k8s_bin_home}/kubectl config use-context admin"
+    ]
   }
 }
 
@@ -330,6 +390,13 @@ resource "tls_cert_request" "k8s_csr" {
     "${digitalocean_droplet.k8s_master.ipv4_address_private}",
     "${digitalocean_droplet.k8s_worker.*.ipv4_address}",
     "${digitalocean_droplet.k8s_worker.*.ipv4_address_private}",
+  ]
+
+  dns_names = [
+    "${digitalocean_droplet.k8s_master.name}",
+    "${digitalocean_droplet.k8s_master.name}.${var.droplet_domain}",
+    "${digitalocean_droplet.k8s_worker.*.name}",
+    "${formatlist("%s.%s",digitalocean_droplet.k8s_worker.*.name, var.droplet_domain)}",
   ]
 }
 

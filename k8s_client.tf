@@ -1,27 +1,6 @@
 /*
  * This script generate the TLS artifacts for clients such as kubectl to access the Kubernetes cluster.
  */
-resource "null_resource" "kubectl_config_master" {
-  triggers {
-    master_id = "${digitalocean_droplet.k8s_master.id}"
-  }
-
-  connection {
-    user = "${var.droplet_ssh_user}"
-    private_key = "${file(var.droplet_private_key_file)}"
-    host = "${digitalocean_droplet.k8s_master.ipv4_address}"
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "${var.k8s_bin_home}/kubectl config set-cluster ${var.k8s_cluster_name} --server=https://${digitalocean_droplet.k8s_master.ipv4_address_private}:${var.k8s_apiserver_secure_port} --certificate-authority=${var.k8s_ca_file}",
-      "${var.k8s_bin_home}/kubectl config set-credentials admin --client-certificate=${var.k8s_client_cert_file} --client-key=${var.k8s_client_key_file}",
-      "${var.k8s_bin_home}/kubectl config set-context admin --cluster=${var.k8s_cluster_name} --user=admin",
-      "${var.k8s_bin_home}/kubectl config use-context admin"
-    ]
-  }
-}
-
 resource "tls_private_key" "client_key" {
   algorithm = "RSA"
   rsa_bits = 2048
@@ -65,10 +44,6 @@ resource "tls_cert_request" "client_csr" {
     postal_code = "${var.tls_client_cert_subject_postal_code}"
     serial_number = "${var.tls_client_cert_subject_serial_number}"
   }
-
-  ip_addresses = [
-    "${digitalocean_droplet.k8s_master.ipv4_address_private}",
-  ]
 }
 
 resource "tls_locally_signed_cert" "client_cert" {
