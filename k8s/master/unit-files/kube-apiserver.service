@@ -35,7 +35,7 @@ ExecStart=/opt/k8s/bin/kube-apiserver \
 ExecStartPost=-/bin/bash -c "until /usr/bin/curl --cacert ${ca_file} --key ${client_key_file} --cert ${client_cert_file} https://$${COREOS_PRIVATE_IPV4}:${secure_port}; do echo \"waiting for API server to come online...\"; sleep 5; done"
 Restart=on-failure
 RestartSec=5
-TimeoutSec=20
+TimeoutSec=60
 
 [Install]
 WantedBy=multi-user.target

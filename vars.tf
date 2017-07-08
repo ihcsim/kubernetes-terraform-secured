@@ -140,8 +140,8 @@ variable "droplet_resolv_file" {
 }
 
 variable "coreos_image" {
-  default = "21378821"
-  description = "Image ID of CoreOS 1185.5.0."
+  default = "26424713"
+  description = "Image ID of CoreOS 1409.7.0."
 }
 
 variable "etcd_count" {
@@ -213,7 +213,7 @@ variable "local_kubectl_key_file" {
 }
 
 variable "k8s_version" {
-  default = "v1.4.0"
+  default = "v1.7.0"
 }
 
 variable "k8s_cluster_name" {
