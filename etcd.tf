@@ -27,20 +27,23 @@ resource "null_resource" "etcd_tls" {
   }
 
   provisioner "remote-exec" {
-    inline = [
-      "sudo mkdir -p ${var.etcd_tls_home}",
-      "sudo chown core:core ${var.etcd_tls_home}",
-      "sudo cat <<EOF > ${var.etcd_cert_file}
+    inline = <<EOF
+sudo mkdir -p ${var.etcd_tls_home}
+sudo chown core:core ${var.etcd_tls_home}
+
+sudo cat <<CERT > ${var.etcd_cert_file}
 ${tls_locally_signed_cert.etcd_cert.cert_pem}
-EOF",
-      "sudo cat <<EOF > ${var.etcd_key_file}
+CERT
+
+sudo cat <<KEY > ${var.etcd_key_file}
 ${tls_private_key.etcd_key.private_key_pem}
-EOF",
-      "sudo cat <<EOF > ${var.etcd_trusted_ca_file}
+KEY
+
+sudo cat <<CERT > ${var.etcd_trusted_ca_file}
 ${tls_self_signed_cert.ca_cert.cert_pem}
-EOF",
-      "sudo chmod 0644 ${var.etcd_tls_home}/*",
-    ]
+CERT
+sudo chmod 0644 ${var.etcd_tls_home}/*
+EOF
   }
 }
 

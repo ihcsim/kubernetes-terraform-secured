@@ -28,10 +28,14 @@ resource "digitalocean_droplet" "k8s_master" {
     inline = [
       "sudo mkdir -p ${var.k8s_home} ${var.k8s_bin_home} ${var.k8s_unit_files_home} ${var.k8s_auth_home}",
       "sudo chown -R core ${var.k8s_home}",
+      "wget -p ${var.k8s_bin_home} https://storage.googleapis.com/kubernetes-release/release/${var.k8s_version}/bin/linux/amd64/kube-aggregator",
       "wget -P ${var.k8s_bin_home} https://storage.googleapis.com/kubernetes-release/release/${var.k8s_version}/bin/linux/amd64/kube-apiserver",
       "wget -P ${var.k8s_bin_home} https://storage.googleapis.com/kubernetes-release/release/${var.k8s_version}/bin/linux/amd64/kube-controller-manager",
       "wget -P ${var.k8s_bin_home} https://storage.googleapis.com/kubernetes-release/release/${var.k8s_version}/bin/linux/amd64/kube-scheduler",
+      "wget -P ${var.k8s_bin_home} https://storage.googleapis.com/kubernetes-release/release/${var.k8s_version}/bin/linux/amd64/kubefed",
       "wget -P ${var.k8s_bin_home} https://storage.googleapis.com/kubernetes-release/release/${var.k8s_version}/bin/linux/amd64/kubectl",
+      "wget -P ${var.k8s_bin_home} https://storage.googleapis.com/kubernetes-release/release/${var.k8s_version}/bin/linux/amd64/cloud-controller-manager",
+      "wget -P ${var.k8s_bin_home} https://storage.googleapis.com/kubernetes-release/release/${var.k8s_version}/bin/linux/amd64/apiextensions-apiserver",
       "chmod +x ${var.k8s_bin_home}/*"
     ]
   }
@@ -80,31 +84,38 @@ resource "null_resource" "k8s_master_tls" {
   }
 
   provisioner "remote-exec" {
-    inline = [
-      "sudo mkdir -p ${var.k8s_tls_home}",
-      "sudo chown core:core ${var.k8s_tls_home}",
-      "sudo cat <<EOF > ${var.k8s_cert_file}
+    inline = <<EOF
+sudo mkdir -p ${var.k8s_tls_home}
+sudo chown core:core ${var.k8s_tls_home}
+
+sudo cat <<CERT > ${var.k8s_cert_file}
 ${tls_locally_signed_cert.k8s_cert.cert_pem}
-EOF",
-      "sudo cat <<EOF > ${var.k8s_key_file}
+CERT
+
+sudo cat <<KEY > ${var.k8s_key_file}
 ${tls_private_key.k8s_key.private_key_pem}
-EOF",
-      "sudo cat <<EOF > ${var.k8s_ca_file}
+KEY
+
+sudo cat <<CERT > ${var.k8s_ca_file}
 ${tls_self_signed_cert.ca_cert.cert_pem}
-EOF",
-      "sudo cat <<EOF > ${var.k8s_ca_key_file}
+CERT
+
+sudo cat <<KEY > ${var.k8s_ca_key_file}
 ${tls_private_key.ca_key.private_key_pem}
-EOF",
-      "sudo cat <<EOF > ${var.k8s_client_ca_file}
+KEY
+
+sudo cat <<CERT > ${var.k8s_client_ca_file}
 ${tls_self_signed_cert.client_ca_cert.cert_pem}
-EOF",
-      "sudo cat <<EOF > ${var.k8s_client_cert_file}
+CERT
+
+sudo cat <<CERT > ${var.k8s_client_cert_file}
 ${tls_locally_signed_cert.client_cert.cert_pem}
-EOF",
-      "sudo cat <<EOF > ${var.k8s_client_key_file}
+CERT
+
+sudo cat <<KEY > ${var.k8s_client_key_file}
 ${tls_private_key.client_key.private_key_pem}
-EOF"
-    ]
+KEY
+EOF
   }
 }
 
@@ -248,7 +259,8 @@ resource "digitalocean_droplet" "k8s_worker" {
       "sudo chown core:core ${var.k8s_bin_home} ${var.k8s_lib_home} ${var.k8s_unit_files_home}",
       "wget -P ${var.k8s_bin_home} https://storage.googleapis.com/kubernetes-release/release/${var.k8s_version}/bin/linux/amd64/kube-proxy",
       "wget -P ${var.k8s_bin_home} https://storage.googleapis.com/kubernetes-release/release/${var.k8s_version}/bin/linux/amd64/kubelet",
-      "chmod +x ${var.k8s_bin_home}/*"
+      "wget -P ${var.k8s_bin_home} https://storage.googleapis.com/kubernetes-release/release/${var.k8s_version}/bin/linux/amd64/kubefed",
+      "chmod +x ${var.k8s_bin_home}/*",
     ]
   }
 
@@ -282,19 +294,22 @@ resource "null_resource" "k8s_worker_tls" {
   }
 
   provisioner "remote-exec" {
-    inline = [
-      "sudo mkdir -p ${var.k8s_tls_home}",
-      "sudo chown core:core ${var.k8s_tls_home}",
-      "sudo cat <<EOF > ${var.k8s_cert_file}
+    inline = <<EOF
+sudo mkdir -p ${var.k8s_tls_home}
+sudo chown core:core ${var.k8s_tls_home}
+
+sudo cat <<CERT > ${var.k8s_cert_file}
 ${tls_locally_signed_cert.k8s_cert.cert_pem}
-EOF",
-      "sudo cat <<EOF > ${var.k8s_key_file}
+CERT
+
+sudo cat <<KEY > ${var.k8s_key_file}
 ${tls_private_key.k8s_key.private_key_pem}
-EOF",
-      "sudo cat <<EOF > ${var.k8s_ca_file}
+KEY
+
+sudo cat <<CERT > ${var.k8s_ca_file}
 ${tls_self_signed_cert.ca_cert.cert_pem}
-EOF"
-    ]
+CERT
+EOF
   }
 }
 

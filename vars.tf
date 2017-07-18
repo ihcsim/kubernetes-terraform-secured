@@ -71,7 +71,7 @@ variable "tls_cluster_cert_subject_serial_number" {
 }
 
 variable "tls_cluster_cert_validity_period_hours" {
-  descrption = "The validity period in hours of the Kubernetes and etcd clusters' TLS cert."
+  description = "The validity period in hours of the Kubernetes and etcd clusters' TLS cert."
 }
 
 variable "tls_cluster_cert_early_renewal_hours" {
@@ -115,7 +115,7 @@ variable "tls_client_cert_subject_serial_number" {
 }
 
 variable "tls_client_cert_validity_period_hours" {
-  descrption = "The validity period in hours of the external client's TLS cert."
+  description = "The validity period in hours of the external client's TLS cert."
 }
 
 variable "tls_client_cert_early_renewal_hours" {

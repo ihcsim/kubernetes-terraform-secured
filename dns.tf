@@ -41,21 +41,25 @@ resource "null_resource" "skydns_tls" {
   }
 
   provisioner "remote-exec" {
-    inline = [
-      "sudo mkdir -p ${var.skydns_tls_home}",
-      "sudo chown core:core ${var.skydns_tls_home}",
-      "sudo cat <<EOF > ${var.skydns_cert_file}
+    inline = <<EOF
+sudo mkdir -p ${var.skydns_tls_home}
+sudo chown core:core ${var.skydns_tls_home}
+
+sudo cat <<CERT > ${var.skydns_cert_file}
 ${tls_locally_signed_cert.skydns_cert.cert_pem}
-EOF",
-      "sudo cat <<EOF > ${var.skydns_key_file}
+CERT
+
+sudo cat <<KEY > ${var.skydns_key_file}
 ${tls_private_key.skydns_key.private_key_pem}
-EOF",
-      "sudo cat <<EOF > ${var.skydns_ca_file}
+KEY
+
+sudo cat <<CERT > ${var.skydns_ca_file}
 ${tls_self_signed_cert.ca_cert.cert_pem}
-EOF",
-      "sudo systemctl enable ${var.skydns_unit_files_home}/*",
-      "sudo systemctl start skydns"
-    ]
+CERT
+
+sudo systemctl enable ${var.skydns_unit_files_home}/*
+sudo systemctl start skydns
+EOF
   }
 }
 
