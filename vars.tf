@@ -368,3 +368,8 @@ variable "skydns_domain_key_path" {
   default = "/skydns/local/coreos"
   description = "The path to all the DNS record keys in etcd. This is the concentation of the pat prefix and the reverse of the droplet_domain. Refer to the https://github.com/skynetservices/skydns docs for more information."
 }
+
+variable "apps_preinstall_sleep_seconds" {
+  default = "300"
+  description = "The number of seconds to wait prior to installing the kube-system applications"
+}

@@ -48,6 +48,7 @@ resource "null_resource" "kube_system_apps" {
 
   provisioner "remote-exec" {
     inline = [
+      "sleep ${var.apps_preinstall_sleep_seconds}",
       "${var.k8s_bin_home}/kubectl create -f ${var.k8s_apps_home}/kubedns.yml",
       "${var.k8s_bin_home}/kubectl create -f ${var.k8s_apps_home}/dashboard.yml",
       "${var.k8s_bin_home}/kubectl create -f ${var.k8s_apps_home}/influxdb.yml",
