@@ -15,7 +15,7 @@ spec:
     tier: frontend
 
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1beta1
 kind: Deployment
 metadata:
   name: frontend
