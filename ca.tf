@@ -1,6 +1,6 @@
 resource "tls_private_key" "ca_key" {
   algorithm = "RSA"
-  rsa_bits = 2048
+  rsa_bits = 4096
 }
 
 resource "tls_self_signed_cert" "ca_cert" {
@@ -19,6 +19,7 @@ resource "tls_self_signed_cert" "ca_cert" {
   }
   validity_period_hours = "${var.tls_cluster_cert_validity_period_hours}"
   allowed_uses = [
+    "digital_signature",
     "key_encipherment",
     "server_auth",
     "client_auth",

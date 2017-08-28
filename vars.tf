@@ -14,8 +14,74 @@ variable "droplet_private_key_id" {
   description = "ID of the SSH key used by Terraform to create the droplets. This can be obtained from the DigitalOcean web console or CLI."
 }
 
+variable "droplet_region" {
+  default = "sfo1"
+}
+
+variable "droplet_domain" {
+  default = "default.cluster"
+  description = "All droplets will be assigned FQDN in the form of <name>.<region>.<droplet_domain>."
+}
+
+variable "droplet_resolv_home" {
+  default = "/etc/systemd/resolved.conf.d/"
+}
+
+variable "droplet_resolv_file" {
+  default = "/etc/systemd/resolved.conf.d/droplet.conf"
+}
+
+variable "coreos_image" {
+  default = "27126343"
+  description = "Image ID of CoreOS 1465.6.0."
+}
+
 variable "etcd_discovery_url" {
   description = "Discovery URL obtained from https://discovery.etcd.io/new?size=N where N is the size of the etcd cluster. This must be generated for every new etcd cluster."
+}
+
+variable "etcd_version" {
+  default = "3.2.0"
+}
+
+variable "etcd_count" {
+  default = 3
+}
+
+variable "etcd_data_dir" {
+  default = "/etc/etcd/data"
+}
+
+variable "etcd_client_port" {
+  default = 2379
+}
+
+variable "etcd_peer_port" {
+  default = 2380
+}
+
+variable "etcd_heartbeat_interval" {
+  default = 1000
+}
+
+variable "etcd_election_timeout" {
+  default = 5000
+}
+
+variable "etcd_ssl_home" {
+  default = "/etc/ssl/certs"
+}
+
+variable "etcd_trusted_ca_file" {
+  default = "ca.pem"
+}
+
+variable "etcd_key_file" {
+  default = "key.pem"
+}
+
+variable "etcd_cert_file" {
+  default = "cert.pem"
 }
 
 variable "k8s_apiserver_token_admin" {
@@ -120,64 +186,6 @@ variable "tls_client_cert_validity_period_hours" {
 
 variable "tls_client_cert_early_renewal_hours" {
   description = "The early renewal period in hours of the external client's TLS cert. Set this variable to a time period that is earlier than the cert validity to force Terraform to generate a new cert before the existing one expires. "
-}
-
-variable "droplet_region" {
-  default = "sfo1"
-}
-
-variable "droplet_domain" {
-  default = "coreos.local"
-  description = "All droplets will be assigned FQDN in the form of <name>.<region>.<droplet_domain>."
-}
-
-variable "droplet_resolv_home" {
-  default = "/etc/systemd/resolved.conf.d/"
-}
-
-variable "droplet_resolv_file" {
-  default = "/etc/systemd/resolved.conf.d/droplet.conf"
-}
-
-variable "coreos_image" {
-  default = "26424713"
-  description = "Image ID of CoreOS 1409.7.0."
-}
-
-variable "etcd_count" {
-  default = 3
-}
-
-variable "etcd_client_port" {
-  default = 2379
-}
-
-variable "etcd_peer_port" {
-  default = 2380
-}
-
-variable "etcd_heartbeat_interval" {
-  default = 1000
-}
-
-variable "etcd_election_timeout" {
-  default = 5000
-}
-
-variable "etcd_tls_home" {
-  default = "/etc/etcd/tls/"
-}
-
-variable "etcd_key_file" {
-  default = "/etc/etcd/tls/key.pem"
-}
-
-variable "etcd_cert_file" {
-  default = "/etc/etcd/tls/cert.pem"
-}
-
-variable "etcd_trusted_ca_file" {
-  default = "/etc/etcd/tls/ca.pem"
 }
 
 variable "fleet_agent_ttl" {
