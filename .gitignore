@@ -2,3 +2,4 @@
 *.tfvars
 .tls
 *.swp
+.terraform
