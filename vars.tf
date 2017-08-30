@@ -15,7 +15,7 @@ variable "droplet_private_key_id" {
 }
 
 variable "droplet_region" {
-  default = "sfo1"
+  default = "sfo2"
 }
 
 variable "droplet_domain" {
@@ -49,7 +49,7 @@ variable "etcd_count" {
 }
 
 variable "etcd_data_dir" {
-  default = "/etc/etcd/data"
+  default = "/var/lib/etcd"
 }
 
 variable "etcd_client_port" {

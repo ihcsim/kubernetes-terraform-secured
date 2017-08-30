@@ -6,7 +6,16 @@ resource "digitalocean_droplet" "etcd" {
   size = "1GB"
   private_networking = "true"
   ssh_keys = ["${var.droplet_private_key_id}"]
-  user_data = "${data.ct_config.etcd.rendered}"
+  user_data = "${element(data.ct_config.etcd.*.rendered, count.index)}"
+  volume_ids = ["${element(digitalocean_volume.etcd_data.*.id, count.index)}"]
+}
+
+resource "digitalocean_volume" "etcd_data" {
+  count = "${var.etcd_count}"
+
+  name = "${format("etcd-%02d-data", count.index)}"
+  region = "${var.droplet_region}"
+  size = 10
 }
 
 resource "null_resource" "etcd_tls" {
@@ -41,11 +50,14 @@ resource "null_resource" "etcd_tls" {
 }
 
 data "ct_config" "etcd" {
+  count = "${var.etcd_count}"
+
   platform = "digitalocean"
-  content = "${data.template_file.etcd_config.rendered}"
+  content = "${element(data.template_file.etcd_config.*.rendered, count.index)}"
 }
 
 data "template_file" "etcd_config" {
+  count = "${var.etcd_count}"
   template = "${file("${path.module}/etcd/config.yaml")}"
 
   vars {
@@ -62,6 +74,8 @@ data "template_file" "etcd_config" {
     ca_cert_file = "${var.etcd_ssl_home}/${var.droplet_domain}/${var.etcd_trusted_ca_file}"
     cert_file = "${var.etcd_ssl_home}/${var.droplet_domain}/${var.etcd_cert_file}"
     key_file = "${var.etcd_ssl_home}/${var.droplet_domain}/${var.etcd_key_file}"
+
+    device_path = "/dev/disk/by-id/scsi-0DO_Volume_${format("etcd-%02d-data", count.index)}"
   }
 }
 
