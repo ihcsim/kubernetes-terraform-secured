@@ -1,12 +1,17 @@
 # kubernetes-terraform-secured
 
-This project shows you how to deploy a secured Kubernetes cluster on DigitalOcean. The instructions here are based on [Kelsey Hightower's _Kubernetes The Hard Way_](https://github.com/kelseyhightower/kubernetes-the-hard-way), [DigitalOcean's _How To Install And Configure Kubernetes On Top Of A CoreOS Cluster_](https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-kubernetes-on-top-of-a-coreos-cluster) and [CoreOS's _CoreOS + Kubernetes Step By Step_](https://coreos.com/kubernetes/docs/latest/getting-started.html). [Terraform v0.7.10](https://www.terraform.io/) is used to automate the deployment of a Kubernetes 1.4.0 cluster, on CoreOS v1185.5.0.
+This project uses [Terraform](https://www.terraform.io/) to provision [Kubernetes](https://kubernetes.io/) on [DigitalOcean](https://www.digitalocean.com/), with [Container Linux](https://coreos.com/os/docs/latest).
+
+**Note that the droplets and volumes created as part of this tutorial aren't free.**
 
 ## Table of Content
 
 * [Getting Started](#getting-started)
-  * [Client Configuration](#client-configuration)
-  * [Cluster Verification](#cluster-verification)
+* [Cluster Layout](#cluster-layout)
+  * [etcd3](#etcd3)
+* [Add-ons](#add-ons)
+* [Client Configuration](#client-configuration)
+* [Cluster Verification](#cluster-verification)
 * [Known Issues](#known-issues)
 * [Cluster Architecture](#cluster-architecture)
   * [Service Management](#service-management)
@@ -16,20 +21,49 @@ This project shows you how to deploy a secured Kubernetes cluster on DigitalOcea
   * [Admission Control](#admission-control)
   * [Network](#network)
   * [DNS](#dns)
+* [License](#license)
+* [References](#references)
+
+## Prerequisites
+
+* [Terraform v0.10.0](https://www.terraform.io/downloads.html)
+* [Container Linux Config Transpiler Provider](https://github.com/coreos/terraform-provider-ct)
+* [Go 1.8.3](https://golang.org/dl/)
 
 ## Getting Started
+To get started, clone this repository. Then use the following Terraform commands to initialize the project and provision the Kubernetes cluster. At the time of this writing, the Linux Container's Config Transpiler provider hasn't been included in the official [Terraform Providers repository](https://github.com/terraform-providers). Hence, it will need to be copied into your local `kubernetes-terraform-secured/.terraform` folder.
 
-**Note that the droplets created as part of this tutorial aren't free.**
+Clone this repository:
+```sh
+$ git clone git@github.com:ihcsim/kubernetes-terraform-secured.git
+```
 
-By default, the cluster is comprised of 3 etcd instances, 1 SkyDNS instance, 1 Kubernetes Master and 2 Kubernetes Workers. You can use the following two variables found in the `vars.tf` file to change the number of etcd and Kubernetes workers instances, respectively:
-* `etcd_count`
-* `k8s_worker_count`
+Initialize the project:
+```sh
+$ terraform init
+```
 
-After the `k8s-master` droplet is created, the `apps.tf` script deploys KubeDNS, Kubernetes Dashboard and Heapster (back by InfluxDB and Grafana) to the cluster. It might take a few minutes after the pods deployment for the resource monitoring graphs to show up.
+The above command will fail with errors complaining about the missing Config Transpiler provider. Install the Config Transpiler provider:
+```sh
+$ cd kuberntes-terraform-secured
+$ go get -u github.com/coreos/terraform-provider-ct
+$ cp $GOPATH/bin/terraform-provider-ct .terraform/plugins/<os_arch>/
+```
 
-Prior to running Terraform to set up the cluster, create a copy of the `terraform.tfvars` file based on the provided `terraform.tfvars.sample` file. The description of all these variables are found in the `vars.tf` file. This file declares all the variables used by Terraform to set up the cluster. Once all the non-default variables are provided, run:
+Re-initialize the project:
+```sh
+$ terraform init
+```
+
+Create a copy of the `terraform.tfvars` file from the provided `terraform.tfvars.sample` file. Provide all the required values. The description of all these variables can be found in the `vars.tf` file.
+
+Provision the Kubernetes cluster using the following Terraform command. In order to set up the etcd cluster, the `etcd_discovery_url` variable needs to be assigned a value obtained from https://discovery.etcd.io/new?size=N, where `N` is the number of etcd nodes in the cluster.
 ```sh
 $ terraform apply
+var.etcd_discovery_url
+  Discovery URL obtained from https://discovery.etcd.io/new?size=N where N is the size of the etcd cluster. This must be generated for every new etcd cluster.
+
+  Enter a value
 ```
 
 If succeeded, you will see the following message:
@@ -56,9 +90,27 @@ etcd = [
 ]
 ```
 
+## Cluster Layout
+By default, this project provisions a cluster that is comprised of:
+
+* 3 etcd3 nodes
+* 1 SkyDNS node
+* 1 Kubernetes Master and
+* 2 Kubernetes Workers
+
+### etcd3
+The number of etcd3 instances in the cluster can be altered by using the `etcd_count` Terraform variable.
+
+The etcd3 cluster is only accessible by nodes within the cluster. All peer-to-peer and client-to-server communication is encrypted and authenticated by using self-signed CA, private key and TLS certificate. These self-signed TLS artifacts are generated using the [Terraform TLS provider](https://www.terraform.io/docs/providers/tls/index.html).
+
+Every etcd instance's `data-dir` at `/var/lib/etcd` is mounted as a volume to a [DigitalOcean block storage](https://www.digitalocean.com/products/storage/).
+
+## Add-ons
+After the `k8s-master` droplet is created, the `apps.tf` script deploys KubeDNS, Kubernetes Dashboard and Heapster (back by InfluxDB and Grafana) to the cluster. It might take a few minutes after the pods deployment for the resource monitoring graphs to show up.
+
 The Kubernetes Dashboard and Swagger UI are accessible using a web browser at `https://<k8s-master-public-ip>:6443/ui` and `https://<k8s-master-public-ip>/swagger-ui`, respectively. The default basic username is `admin`, with the password specified by the `k8s.apiserver_basic_auth_admin` variable. Note that your web browser will likely generate some certificate-related warnings, complaining that the certificates aren't trusted. This is expected since the TLS certifcates are signed by a self-generated CA.
 
-### Client Configuration
+## Client Configuration
 Since all external and internal communication are secured by SSL/TLS, we will need to provide clients (such as `kubectl`, `etcdctl`, `curl`) with:
 
 1. The cluster's Certificate Authority to verify messages received from the cluster,
@@ -109,7 +161,7 @@ users:
     client-key: <project-path>/.tls/kubectl-key.pem
 ```
 
-### Cluster Verification
+## Cluster Verification
 To verify that the etcd cluster is accessible from an external host, run the following command:
 ```sh
 $ etcdctl cluster-health
@@ -376,5 +428,12 @@ etcd-01.coreos.local.	3600	IN	A	xxx.xxx.xxx.xxx
 ;; MSG SIZE  rcvd: 356
 ```
 
-## LICENSE
+## License
 See the [LICENSE](LICENSE) file for the full license text.
+
+## References
+
+* [Kubernetes The Hard Way](https://github.com/kelseyhightower/kubernetes-the-hard-way)
+* [Running etcd on Container Linux](https://coreos.com/etcd/docs/latest/getting-started-with-etcd.html)
+* [How To Install And Configure Kubernetes On Top Of A CoreOS Cluster](https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-kubernetes-on-top-of-a-coreos-cluster)
+* [CoreOS + Kubernetes Step By Step](https://coreos.com/kubernetes/docs/latest/getting-started.html).
