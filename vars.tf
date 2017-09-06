@@ -31,8 +31,20 @@ variable "droplet_resolv_file" {
   default = "/etc/systemd/resolved.conf.d/droplet.conf"
 }
 
+variable "droplet_maintenance_window_start" {
+  default = "Sun 1:00"
+}
+
+variable "droplet_maintenance_window_length" {
+  default = "2h"
+}
+
+variable "droplet_update_channel" {
+  default = "stable"
+}
+
 variable "coreos_image" {
-  default = "27126343"
+  default = "27616485"
   description = "Image ID of CoreOS 1465.6.0."
 }
 

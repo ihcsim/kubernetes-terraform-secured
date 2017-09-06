@@ -10,6 +10,7 @@ This project uses [Terraform](https://www.terraform.io/) to provision [Kubernete
 * [Cluster Layout](#cluster-layout)
   * [etcd3](#etcd3)
 * [Add-ons](#add-ons)
+* [Droplet Updates](#droplet-updates)
 * [Client Configuration](#client-configuration)
 * [Cluster Verification](#cluster-verification)
 * [Known Issues](#known-issues)
@@ -109,6 +110,19 @@ Every etcd instance's `data-dir` at `/var/lib/etcd` is mounted as a volume to a 
 After the `k8s-master` droplet is created, the `apps.tf` script deploys KubeDNS, Kubernetes Dashboard and Heapster (back by InfluxDB and Grafana) to the cluster. It might take a few minutes after the pods deployment for the resource monitoring graphs to show up.
 
 The Kubernetes Dashboard and Swagger UI are accessible using a web browser at `https://<k8s-master-public-ip>:6443/ui` and `https://<k8s-master-public-ip>/swagger-ui`, respectively. The default basic username is `admin`, with the password specified by the `k8s.apiserver_basic_auth_admin` variable. Note that your web browser will likely generate some certificate-related warnings, complaining that the certificates aren't trusted. This is expected since the TLS certifcates are signed by a self-generated CA.
+
+## Droplet Updates
+CoreOS [locksmith](https://github.com/coreos/locksmith) is enabled to perform updates on Container Linux. By default, `locksmithd` is configured to use the `etcd-lock` reboot strategy during updates. The reboot window is set to a 2 hour window starting at 1 AM on Sundays.
+
+The following Terraform variables can be used to configure the reboot strategy and maintenance window:
+
+* `droplet_maintenance_window_start`
+* `droplet_maintenance_window_length`
+* `droplet_update_channel`
+
+The default update group is `stable`.
+
+For more information, refer to the Container Linux documentation on [Update Strategies](https://coreos.com/os/docs/1506.0.0/update-strategies.html).
 
 ## Client Configuration
 Since all external and internal communication are secured by SSL/TLS, we will need to provide clients (such as `kubectl`, `etcdctl`, `curl`) with:
@@ -435,5 +449,6 @@ See the [LICENSE](LICENSE) file for the full license text.
 
 * [Kubernetes The Hard Way](https://github.com/kelseyhightower/kubernetes-the-hard-way)
 * [Running etcd on Container Linux](https://coreos.com/etcd/docs/latest/getting-started-with-etcd.html)
+* [Container Linux Config Spec](https://coreos.com/os/docs/1506.0.0/configuration.html)
 * [How To Install And Configure Kubernetes On Top Of A CoreOS Cluster](https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-kubernetes-on-top-of-a-coreos-cluster)
 * [CoreOS + Kubernetes Step By Step](https://coreos.com/kubernetes/docs/latest/getting-started.html).

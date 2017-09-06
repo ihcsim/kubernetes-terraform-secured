@@ -76,6 +76,10 @@ data "template_file" "etcd_config" {
     key_file = "${var.etcd_ssl_home}/${var.droplet_domain}/${var.etcd_key_file}"
 
     device_path = "/dev/disk/by-id/scsi-0DO_Volume_${format("etcd-%02d-data", count.index)}"
+
+    maintenance_window_start = "${var.droplet_maintenance_window_start}"
+    maintenance_window_length = "${var.droplet_maintenance_window_length}"
+    update_channel = "${var.droplet_update_channel}"
   }
 }
 
