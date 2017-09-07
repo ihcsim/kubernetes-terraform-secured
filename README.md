@@ -67,30 +67,6 @@ var.etcd_discovery_url
   Enter a value
 ```
 
-If succeeded, you will see the following message:
-```sh
-...
-Apply complete! Resources: 31 added, 0 changed, 0 destroyed.
-
-The state of your infrastructure has been saved to the path
-below. This state is required to modify and destroy your
-infrastructure, so keep it safe. To inspect the complete state
-use the `terraform show` command.
-
-State path: terraform.tfstate
-
-Outputs:
-
-Kubernetes Dashboard = https://xxx.xxx.xxx.xxx:xxxx/ui
-Kubernetes Master = https://xxx.xxx.xxx.xxx:xxxx
-Kubernetes Swagger Docs = https://xxx.xxx.xxx.xxx/swagger-ui
-etcd = [
-    https://xxx.xxx.xxx.xxx:xxxx,
-    https://xxx.xxx.xxx.xxx:xxxx,
-    https://xxx.xxx.xxx.xxx:Xxxx
-]
-```
-
 ## Cluster Layout
 By default, this project provisions a cluster that is comprised of:
 
@@ -105,6 +81,15 @@ The number of etcd3 instances in the cluster can be altered by using the `etcd_c
 The etcd3 cluster is only accessible by nodes within the cluster. All peer-to-peer and client-to-server communication is encrypted and authenticated by using self-signed CA, private key and TLS certificate. These self-signed TLS artifacts are generated using the [Terraform TLS provider](https://www.terraform.io/docs/providers/tls/index.html).
 
 Every etcd instance's `data-dir` at `/var/lib/etcd` is mounted as a volume to a [DigitalOcean block storage](https://www.digitalocean.com/products/storage/).
+
+On every droplet, the `etcdctl` v2 client is configured to target the etcd cluster.
+```sh
+$ etcdctl cluster-health
+member 1ac8697e1ee7cb22 is healthy: got healthy result from https://xx.xxx.xxx.xxx:xxxx
+member 8e62221f3a6bf84d is healthy: got healthy result from https://xx.xxx.xxx.xxx:xxxx
+member 9350aa2a45b92d34 is healthy: got healthy result from https://xx.xxx.xxx.xxx:xxxx
+cluster is healthy
+```
 
 ## Add-ons
 After the `k8s-master` droplet is created, the `apps.tf` script deploys KubeDNS, Kubernetes Dashboard and Heapster (back by InfluxDB and Grafana) to the cluster. It might take a few minutes after the pods deployment for the resource monitoring graphs to show up.
@@ -142,16 +127,6 @@ TLS Artifacts     | Description
 
 If you don't want any TLS artifacts to be saved locally, comment out the resource definitions in the `local.tf` file.
 
-To help maintain sane CLI options with `etcdctl`, you can create an environment file to export these variables:
-```sh
-#!/bin/bash
-
-export ETCDCTL_ENDPOINTS=https://<etcd-00-public-ip>:<etcd-client-port>,https://<etcd-00-public-ip>:<etcd-client-port>,https://<etcd-00-public-ip>:<etcd-client-port>
-export ETCDCTL_CERT_FILE=<project-path>/.tls/etcd-cert.pem
-export ETCDCTL_KEY_FILE=<project-path>/.tls/etcd-key.pem
-export ETCDCTL_CA_FILE=<project-path>/.tls/ca.pem
-```
-
 As for `kubectl`, this is what my local `kubeconfig` looks like:
 ```sh
 apiVersion: v1
@@ -176,16 +151,6 @@ users:
 ```
 
 ## Cluster Verification
-To verify that the etcd cluster is accessible from an external host, run the following command:
-```sh
-$ etcdctl cluster-health
-member fec6653bf64f68d is healthy: got healthy result from https://<etcd-00-public-ip>:xxxx
-member 4e62ba9090bc7797 is healthy: got healthy result from https://<etcd-01-public-ip>:xxxx
-member b5b0591f9b16568b is healthy: got healthy result from https://<etcd-02-public-ip>:xxxx
-cluster is healthy
-```
-The `etcdctl` client on each droplet is configured to target the private network interfaces and employ the correct TLS certs and keys for secure inter-cluster communication.
-
 To verify that the Kubernetes cluster is accessible from an external host, run the following `curl` command:
 ```sh
 $ curl --cacert <project-path>/.tls/ca.pem \

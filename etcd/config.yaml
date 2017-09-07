@@ -56,6 +56,16 @@ storage:
         id: 500
       group:
         id: 500
+    - path: /etc/profile.env
+      filesystem: root
+      mode: 0644
+      contents:
+        inline: |
+          source /run/metadata/coreos
+          export ETCDCTL_CA_FILE=${ca_cert_file}
+          export ETCDCTL_CERT_FILE=${cert_file}
+          export ETCDCTL_KEY_FILE=${key_file}
+          export ETCDCTL_ENDPOINTS=https://$${COREOS_DIGITALOCEAN_IPV4_PRIVATE_0}:${etcd_client_port}
 
 update:
   group: ${update_channel}
@@ -64,7 +74,7 @@ locksmith:
   reboot_strategy: etcd-lock
   window_start: ${maintenance_window_start}
   window_length: ${maintenance_window_length}
-  etcd_endpoints: https://{PRIVATE_IPV4}:${etcd_peer_port}
+  etcd_endpoints: https://{PRIVATE_IPV4}:${etcd_client_port}
   etcd_cafile: ${ca_cert_file}
   etcd_certfile: ${cert_file}
   etcd_keyfile: ${key_file}
