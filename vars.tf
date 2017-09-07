@@ -73,7 +73,7 @@ variable "etcd_peer_port" {
 }
 
 variable "etcd_heartbeat_interval" {
-  default = 1000
+  default = 5000
 }
 
 variable "etcd_election_timeout" {
