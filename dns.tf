@@ -102,15 +102,14 @@ resource "tls_cert_request" "skydns_csr" {
   key_algorithm = "${tls_private_key.skydns_key.algorithm}"
   private_key_pem = "${tls_private_key.skydns_key.private_key_pem}"
   subject {
-    common_name = "${var.tls_cluster_cert_subject_common_name}"
-    organization = "${var.tls_cluster_cert_subject_organization}"
-    organizational_unit = "${var.tls_cluster_cert_subject_organizational_unit}"
-    street_address = ["${var.tls_cluster_cert_subject_street_address}"]
-    locality = "${var.tls_cluster_cert_subject_locality}"
-    province = "${var.tls_cluster_cert_subject_province}"
-    country = "${var.tls_cluster_cert_subject_country}"
-    postal_code = "${var.tls_cluster_cert_subject_postal_code}"
-    serial_number = "${var.tls_cluster_cert_subject_serial_number}"
+    common_name = "${var.tls_skydns_cert_subject_common_name}"
+    organization = "${var.tls_skydns_cert_subject_organization}"
+    organizational_unit = "${var.tls_cert_subject_organizational_unit}"
+    street_address = ["${var.tls_cert_subject_street_address}"]
+    locality = "${var.tls_cert_subject_locality}"
+    province = "${var.tls_cert_subject_province}"
+    country = "${var.tls_cert_subject_country}"
+    postal_code = "${var.tls_cert_subject_postal_code}"
   }
 
   ip_addresses = [
@@ -129,11 +128,11 @@ resource "tls_locally_signed_cert" "skydns_cert" {
   ca_key_algorithm = "${tls_private_key.ca_key.algorithm}"
   ca_private_key_pem = "${tls_private_key.ca_key.private_key_pem}"
   ca_cert_pem = "${tls_self_signed_cert.ca_cert.cert_pem}"
-  validity_period_hours = "${var.tls_cluster_cert_validity_period_hours}"
+  validity_period_hours = "${var.tls_cert_validity_period_hours}"
   allowed_uses = [
     "key_encipherment",
     "server_auth",
-    "client_auth",
+    "client_auth"
   ]
-  early_renewal_hours = "${var.tls_cluster_cert_early_renewal_hours}"
+  early_renewal_hours = "${var.tls_cert_early_renewal_hours}"
 }

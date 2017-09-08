@@ -7,15 +7,6 @@ resource "digitalocean_droplet" "etcd" {
   private_networking = "true"
   ssh_keys = ["${var.droplet_private_key_id}"]
   user_data = "${element(data.ct_config.etcd.*.rendered, count.index)}"
-  volume_ids = ["${element(digitalocean_volume.etcd_data.*.id, count.index)}"]
-}
-
-resource "digitalocean_volume" "etcd_data" {
-  count = "${var.etcd_count}"
-
-  name = "${format("etcd-%02d-data", count.index)}"
-  region = "${var.droplet_region}"
-  size = 10
 }
 
 resource "null_resource" "etcd_tls" {
@@ -33,19 +24,19 @@ resource "null_resource" "etcd_tls" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo mkdir -p ${var.etcd_ssl_home}/${var.droplet_domain}",
-      "sudo chown -R ${var.droplet_ssh_user} ${var.etcd_ssl_home}/${var.droplet_domain}"
+      "sudo mkdir -p ${var.droplet_tls_certs_home}/${var.droplet_domain}",
+      "sudo chown -R ${var.droplet_ssh_user} ${var.droplet_tls_certs_home}/${var.droplet_domain}"
     ]
   }
 
   provisioner "file" {
     content = "${element(tls_locally_signed_cert.etcd_cert.*.cert_pem, count.index)}"
-    destination = "${var.etcd_ssl_home}/${var.droplet_domain}/${var.etcd_cert_file}"
+    destination = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cert_file}"
   }
 
   provisioner "file" {
     content = "${element(tls_private_key.etcd_key.*.private_key_pem, count.index)}"
-    destination = "${var.etcd_ssl_home}/${var.droplet_domain}/${var.etcd_key_file}"
+    destination = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_key_file}"
   }
 }
 
@@ -70,10 +61,10 @@ data "template_file" "etcd_config" {
     etcd_heartbeat_interval = "${var.etcd_heartbeat_interval}"
     etcd_election_timeout = "${var.etcd_election_timeout}"
 
-    ca_cert = "${jsonencode(tls_self_signed_cert.ca_cert.cert_pem)}"
-    ca_cert_file = "${var.etcd_ssl_home}/${var.droplet_domain}/${var.etcd_trusted_ca_file}"
-    cert_file = "${var.etcd_ssl_home}/${var.droplet_domain}/${var.etcd_cert_file}"
-    key_file = "${var.etcd_ssl_home}/${var.droplet_domain}/${var.etcd_key_file}"
+    cacert = "${jsonencode(tls_self_signed_cert.ca_cert.cert_pem)}"
+    cacert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cacert_file}"
+    cert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cert_file}"
+    key_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_key_file}"
 
     device_path = "/dev/disk/by-id/scsi-0DO_Volume_${format("etcd-%02d-data", count.index)}"
 
@@ -101,15 +92,14 @@ resource "tls_cert_request" "etcd_csr" {
   ]
 
   subject = {
-    common_name = "${var.tls_cluster_cert_subject_common_name}"
-    organization = "${var.tls_cluster_cert_subject_organization}"
-    organizational_unit = "${var.tls_cluster_cert_subject_organizational_unit}"
-    street_address = ["${var.tls_cluster_cert_subject_street_address}"]
-    locality = "${var.tls_cluster_cert_subject_locality}"
-    province = "${var.tls_cluster_cert_subject_province}"
-    country = "${var.tls_cluster_cert_subject_country}"
-    postal_code = "${var.tls_cluster_cert_subject_postal_code}"
-    serial_number = "${var.tls_cluster_cert_subject_serial_number}"
+    common_name = "${var.tls_etcd_cert_subject_common_name}"
+    organization = "${var.tls_etcd_cert_subject_organization}"
+    organizational_unit = "${var.tls_cert_subject_organizational_unit}"
+    street_address = ["${var.tls_cert_subject_street_address}"]
+    locality = "${var.tls_cert_subject_locality}"
+    province = "${var.tls_cert_subject_province}"
+    country = "${var.tls_cert_subject_country}"
+    postal_code = "${var.tls_cert_subject_postal_code}"
   }
 }
 
@@ -121,10 +111,10 @@ resource "tls_locally_signed_cert" "etcd_cert" {
   ca_key_algorithm = "${tls_private_key.ca_key.algorithm}"
   ca_cert_pem = "${tls_self_signed_cert.ca_cert.cert_pem}"
 
-  validity_period_hours = "${var.tls_cluster_cert_validity_period_hours}"
-  early_renewal_hours = "${var.tls_cluster_cert_early_renewal_hours}"
+  validity_period_hours = "${var.tls_cert_validity_period_hours}"
+  early_renewal_hours = "${var.tls_cert_early_renewal_hours}"
+
   allowed_uses = [
-    "digital_signature",
     "key_encipherment",
     "server_auth",
     "client_auth"

@@ -239,7 +239,7 @@ data "template_file" "token_auth_file" {
 resource "digitalocean_droplet" "k8s_worker" {
   depends_on = ["digitalocean_droplet.k8s_master"]
 
-  count = "${var.k8s_worker_count}"
+  count = "${var.k8s_workers_count}"
   name = "${format("k8s-worker-%02d", count.index)}"
   image = "${var.coreos_image}"
   region = "${var.droplet_region}"
@@ -281,7 +281,7 @@ resource "digitalocean_droplet" "k8s_worker" {
 }
 
 resource "null_resource" "k8s_worker_tls" {
-  count = "${var.k8s_worker_count}"
+  count = "${var.k8s_workers_count}"
   triggers {
     droplet_id = "${join("," , digitalocean_droplet.k8s_worker.*.id)}"
     cert = "${tls_locally_signed_cert.k8s_cert.cert_pem}"
@@ -316,7 +316,7 @@ EOF
 resource "null_resource" "k8s_worker_dns" {
   depends_on = ["null_resource.k8s_worker_tls"]
 
-  count = "${var.k8s_worker_count}"
+  count = "${var.k8s_workers_count}"
   triggers {
     droplet_id = "${join("," , digitalocean_droplet.k8s_worker.*.id)}"
   }
@@ -380,52 +380,152 @@ resource "null_resource" "kubectl_config_master" {
   }
 }
 
-resource "tls_private_key" "k8s_key" {
+resource "tls_private_key" "kube_apiserver" {
   algorithm = "RSA"
-  rsa_bits = 2048
+  rsa_bits = 4096
 }
 
-resource "tls_cert_request" "k8s_csr" {
-  key_algorithm = "${tls_private_key.k8s_key.algorithm}"
-  private_key_pem = "${tls_private_key.k8s_key.private_key_pem}"
+resource "tls_cert_request" "kube_apiserver" {
+  key_algorithm = "${tls_private_key.kube_apiserver.algorithm}"
+  private_key_pem = "${tls_private_key.kube_apiserver.private_key_pem}"
+
   subject {
-    common_name = "${var.tls_cluster_cert_subject_common_name}"
-    organization = "${var.tls_cluster_cert_subject_organization}"
-    organizational_unit = "${var.tls_cluster_cert_subject_organizational_unit}"
-    street_address = ["${var.tls_cluster_cert_subject_street_address}"]
-    locality = "${var.tls_cluster_cert_subject_locality}"
-    province = "${var.tls_cluster_cert_subject_province}"
-    country = "${var.tls_cluster_cert_subject_country}"
-    postal_code = "${var.tls_cluster_cert_subject_postal_code}"
-    serial_number = "${var.tls_cluster_cert_subject_serial_number}"
+    common_name = "${var.tls_kube_apiserver_cert_subject_common_name}"
+    organization = "${var.tls_kube_apiserver_cert_subject_organization}"
+    organizational_unit = "${var.tls_cert_subject_organizational_unit}"
+    street_address = ["${var.tls_cert_subject_street_address}"]
+    locality = "${var.tls_cert_subject_locality}"
+    province = "${var.tls_cert_subject_province}"
+    country = "${var.tls_cert_subject_country}"
+    postal_code = "${var.tls_cert_subject_postal_code}"
   }
-
-  ip_addresses = [
-    "${digitalocean_droplet.k8s_master.ipv4_address}",
-    "${digitalocean_droplet.k8s_master.ipv4_address_private}",
-    "${digitalocean_droplet.k8s_worker.*.ipv4_address}",
-    "${digitalocean_droplet.k8s_worker.*.ipv4_address_private}",
-  ]
-
-  dns_names = [
-    "${digitalocean_droplet.k8s_master.name}",
-    "${digitalocean_droplet.k8s_master.name}.${var.droplet_domain}",
-    "${digitalocean_droplet.k8s_worker.*.name}",
-    "${formatlist("%s.%s",digitalocean_droplet.k8s_worker.*.name, var.droplet_domain)}",
-  ]
 }
 
-resource "tls_locally_signed_cert" "k8s_cert" {
-  cert_request_pem = "${tls_cert_request.k8s_csr.cert_request_pem}"
+resource "tls_locally_signed_cert" "kube_apiserver" {
+  cert_request_pem = "${tls_cert_request.kube_apiserver.cert_request_pem}"
   ca_key_algorithm = "${tls_private_key.ca_key.algorithm}"
   ca_private_key_pem = "${tls_private_key.ca_key.private_key_pem}"
   ca_cert_pem = "${tls_self_signed_cert.ca_cert.cert_pem}"
-  validity_period_hours = "${var.tls_cluster_cert_validity_period_hours}"
+  validity_period_hours = "${var.tls_cert_validity_period_hours}"
+  early_renewal_hours = "${var.tls_cert_early_renewal_hours}"
+
   allowed_uses = [
-    "key_encipherment",
     "server_auth",
-    "client_auth",
-    "cert_signing"
+    "client_auth"
   ]
-  early_renewal_hours = "${var.tls_cluster_cert_early_renewal_hours}"
+}
+
+resource "tls_private_key" "kube_proxy" {
+  algorithm = "RSA"
+  rsa_bits = 4096
+}
+
+resource "tls_cert_request" "kube_proxy" {
+  key_algorithm = "${tls_private_key.kube_proxy.algorithm}"
+  private_key_pem = "${tls_private_key.kube_proxy.private_key_pem}"
+
+  subject {
+    common_name = "${var.tls_kube_proxy_cert_subject_common_name}"
+    organization = "${var.tls_kube_proxy_cert_subject_organization}"
+    organizational_unit = "${var.tls_cert_subject_organizational_unit}"
+    street_address = ["${var.tls_cert_subject_street_address}"]
+    locality = "${var.tls_cert_subject_locality}"
+    province = "${var.tls_cert_subject_province}"
+    country = "${var.tls_cert_subject_country}"
+    postal_code = "${var.tls_cert_subject_postal_code}"
+  }
+}
+
+resource "tls_locally_signed_cert" "kube_proxy" {
+  cert_request_pem = "${tls_cert_request.kube_proxy.cert_request_pem}"
+  ca_key_algorithm = "${tls_private_key.ca_key.algorithm}"
+  ca_private_key_pem = "${tls_private_key.ca_key.private_key_pem}"
+  ca_cert_pem = "${tls_self_signed_cert.ca_cert.cert_pem}"
+  validity_period_hours = "${var.tls_cert_validity_period_hours}"
+  early_renewal_hours = "${var.tls_cert_early_renewal_hours}"
+
+  allowed_uses = [
+    "server_auth",
+    "client_auth"
+  ]
+}
+
+resource "tls_private_key" "k8s_workers" {
+  count = "${var.k8s_workers_count}"
+
+  algorithm = "RSA"
+  rsa_bits = 4096
+}
+
+resource "tls_cert_request" "k8s_workers" {
+  count = "${var.k8s_workers_count}"
+
+  key_algorithm = "${element(tls_private_key.k8s_workers.*.algorithm, count.index)}"
+  private_key_pem = "${element(tls_private_key.k8s_workers.*.private_key_pem, count.index)}"
+
+  subject {
+    common_name = "${var.tls_workers_cert_subject_common_name}:${count.index}"
+    organization = "${var.tls_workers_cert_subject_organization}"
+    organizational_unit = "${var.tls_cert_subject_organizational_unit}"
+    street_address = ["${var.tls_cert_subject_street_address}"]
+    locality = "${var.tls_cert_subject_locality}"
+    province = "${var.tls_cert_subject_province}"
+    country = "${var.tls_cert_subject_country}"
+    postal_code = "${var.tls_cert_subject_postal_code}"
+  }
+
+  ip_addresses = [
+    "${element(digitalocean_droplet.k8s_workers.*.ipv4_address_private, count.index)}",
+  ]
+}
+
+resource "tls_locally_signed_cert" "k8s_workers" {
+  count = "${var.k8s_workers_count}"
+
+  cert_request_pem = "${element(tls_cert_request.k8s_workers.*.cert_request_pem, count.index)}"
+  ca_key_algorithm = "${tls_private_key.ca_key.algorithm}"
+  ca_private_key_pem = "${tls_private_key.ca_key.private_key_pem}"
+  ca_cert_pem = "${tls_self_signed_cert.ca_cert.cert_pem}"
+  validity_period_hours = "${var.tls_cert_validity_period_hours}"
+  early_renewal_hours = "${var.tls_cert_early_renewal_hours}"
+
+  allowed_uses = [
+    "server_auth",
+    "client_auth"
+  ]
+}
+
+resource "tls_private_key" "k8s_admin_client" {
+  algorithm = "RSA"
+  rsa_bits = 4096
+}
+
+resource "tls_cert_request" "k8s_admin_client" {
+  key_algorithm = "${tls_private_key.k8s_admin_client.algorithm}"
+  private_key_pem = "${tls_private_key.k8s_admin_client.private_key_pem}"
+
+  subject {
+    common_name = "${var.tls_client_cert_subject_common_name}"
+    organization = "${var.tls_client_cert_subject_organization}"
+    organizational_unit = "${var.tls_cert_subject_organizational_unit}"
+    street_address = ["${var.tls_cert_subject_street_address}"]
+    locality = "${var.tls_cert_subject_locality}"
+    province = "${var.tls_cert_subject_province}"
+    country = "${var.tls_cert_subject_country}"
+    postal_code = "${var.tls_cert_subject_postal_code}"
+  }
+}
+
+resource "tls_locally_signed_cert" "k8s_admin_client" {
+  cert_request_pem = "${tls_cert_request.k8s_admin_client.cert_request_pem}"
+  ca_key_algorithm = "${tls_private_key.ca_key.algorithm}"
+  ca_private_key_pem = "${tls_private_key.ca_key.private_key_pem}"
+  ca_cert_pem = "${tls_self_signed_cert.ca_cert.cert_pem}"
+  validity_period_hours = "${var.tls_cert_validity_period_hours}"
+  early_renewal_hours = "${var.tls_cert_early_renewal_hours}"
+
+  allowed_uses = [
+    "server_auth",
+    "client_auth"
+  ]
 }

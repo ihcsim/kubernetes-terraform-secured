@@ -23,6 +23,10 @@ variable "droplet_domain" {
   description = "All droplets will be assigned FQDN in the form of <name>.<region>.<droplet_domain>."
 }
 
+variable "droplet_tls_certs_home" {
+  default = "/etc/ssl/certs"
+}
+
 variable "droplet_resolv_home" {
   default = "/etc/systemd/resolved.conf.d/"
 }
@@ -108,96 +112,104 @@ variable "k8s_apiserver_basic_auth_admin" {
   description = "Basic authentication password for the 'admin' user to access the Kubernetes dashboard. Refer http://kubernetes.io/docs/admin/authentication/#static-password-file for more details."
 }
 
-variable "tls_ca_cert_subject_common_name" {
+variable "tls_cacert_subject_common_name" {
   description = "The self-generated CA cert subject common name used to sign all cluster certs. The cluster certs are used to secure and validate inter-cluster requests. The subject common name of this CA cert must be different from the subject common name for the Kubernetes' certificates. Otherwise, Kubernetes will fail, complaining that it's been assigned a self-signed certificate."
 }
 
-variable "tls_cluster_cert_subject_common_name" {
-  description = "The Kubernetes and etcd clusters' TLS cert subject common name."
+variable "tls_cacert_subject_organization" {
+  description = "The self-generated CA cert subject organization name."
 }
 
-variable "tls_cluster_cert_subject_organization" {
-  description = "The Kubernetes and etcd clusters' TLS cert subject organization name."
+variable "tls_etcd_cert_subject_common_name" {
+  description = "The etcd TLS cert subject organization name."
+  default = "system:etcd"
 }
 
-variable "tls_cluster_cert_subject_organizational_unit" {
-  description = "The Kubernetes and etcd clusters' TLS cert subject organizational unit."
+variable "tls_etcd_cert_subject_organization" {
+  description = "The etcd TLS cert subject organization name."
+  default = "system:etcd"
 }
 
-variable "tls_cluster_cert_subject_street_address" {
-  description = "The Kubernetes and etcd clusters' TLS cert subject street address."
+variable "tls_skydns_cert_subject_common_name" {
+  description = "The SkyDNS TLS cert subject organization name."
+  default = "system:dns"
 }
 
-variable "tls_cluster_cert_subject_locality" {
-  description = "The Kubernetes and etcd clusters' TLS cert subject locality."
+variable "tls_skydns_cert_subject_organization" {
+  description = "The SkyDNS TLS cert subject organization name."
+  default = "system:dns"
 }
 
-variable "tls_cluster_cert_subject_province" {
-  description = "The Kubernetes and etcd clusters' TLS cert subject postal code."
+variable "tls_kube_apiserver_cert_subject_common_name" {
+  description = "The kubernetes API Server TLS cert subject organization name."
+  default = "kubernetes"
 }
 
-variable "tls_cluster_cert_subject_postal_code" {
-  description = "The Kubernetes and etcd clusters' TLS cert subject postal code."
+variable "tls_kube_apiserver_cert_subject_organization" {
+  description = "The kubernetes API Server TLS cert subject organization name."
+  default = "kubernetes"
 }
 
-variable "tls_cluster_cert_subject_country" {
-  description = "The Kubernetes and etcd clusters' TLS cert subject 2-letter country code."
+variable "tls_kube_proxy_cert_subject_common_name" {
+  description = "The kube-proxy TLS cert subject organization name."
+  default = "system:kube-proxy"
 }
 
-variable "tls_cluster_cert_subject_serial_number" {
-  description = "The Kubernetes and etcd clusters' TLS cert subject serial number."
+variable "tls_kube_proxy_cert_subject_organization" {
+  description = "The kube-proxy TLS cert subject organization name."
+  default = "system:node-proxier"
 }
 
-variable "tls_cluster_cert_validity_period_hours" {
-  description = "The validity period in hours of the Kubernetes and etcd clusters' TLS cert."
+variable "tls_workers_cert_subject_common_name" {
+  description = "The workers' TLS cert subject organization name."
+  default = "system:node"
 }
 
-variable "tls_cluster_cert_early_renewal_hours" {
-  description = "The early renewal period in hours of the Kubernetes and etcd clusters' TLS cert. Set this variable to a time period that is earlier than the cert validity to force Terraform to generate a new cert before the existing one expires. "
+variable "tls_workers_cert_subject_organization" {
+  description = "The workers' TLS cert subject organization name."
+  default = "system:nodes"
 }
 
 variable "tls_client_cert_subject_common_name" {
-  description = "The external client's TLS cert subject common name. Kubernetes uses this as the user name for the request. Refer http://kubernetes.io/docs/admin/authentication/#x509-client-certs"
+  description = "The client's TLS cert subject common name. Kubernetes uses this as the user name for the request. Refer http://kubernetes.io/docs/admin/authentication/#x509-client-certs"
+  default = "admin"
 }
 
 variable "tls_client_cert_subject_organization" {
-  description = "The external client's TLS cert subject organization name. As of Kubernetes 1.4, Kubernetes uses this as the user's group. Refer http://kubernetes.io/docs/admin/authentication/#x509-client-certs"
+  description = "The client's TLS cert subject organization name. As of Kubernetes 1.4, Kubernetes uses this as the user's group. Refer http://kubernetes.io/docs/admin/authentication/#x509-client-certs"
+  default = "system:masters"
 }
 
-variable "tls_client_cert_subject_organizational_unit" {
-  description = "The external client's TLS cert subject organizational unit."
+variable "tls_cert_subject_organizational_unit" {
+  description = "The Kubernetes and etcd clusters' TLS cert subject organizational unit."
 }
 
-variable "tls_client_cert_subject_street_address" {
-  description = "The external client's TLS cert subject street address."
+variable "tls_cert_subject_street_address" {
+  description = "The Kubernetes and etcd clusters' TLS cert subject street address."
 }
 
-variable "tls_client_cert_subject_locality" {
-  description = "The external client's TLS cert subject locality."
+variable "tls_cert_subject_locality" {
+  description = "The Kubernetes and etcd clusters' TLS cert subject locality."
 }
 
-variable "tls_client_cert_subject_province" {
-  description = "The external client's TLS cert subject postal code."
+variable "tls_cert_subject_province" {
+  description = "The Kubernetes and etcd clusters' TLS cert subject postal code."
 }
 
-variable "tls_client_cert_subject_postal_code" {
-  description = "The external client's TLS cert subject postal code."
+variable "tls_cert_subject_postal_code" {
+  description = "The Kubernetes and etcd clusters' TLS cert subject postal code."
 }
 
-variable "tls_client_cert_subject_country" {
-  description = "The external client's TLS cert subject 2-letter country code."
+variable "tls_cert_subject_country" {
+  description = "The Kubernetes and etcd clusters' TLS cert subject 2-letter country code."
 }
 
-variable "tls_client_cert_subject_serial_number" {
-  description = "The external client's TLS cert subject serial number."
+variable "tls_cert_validity_period_hours" {
+  description = "The validity period in hours of the Kubernetes and etcd clusters' TLS cert."
 }
 
-variable "tls_client_cert_validity_period_hours" {
-  description = "The validity period in hours of the external client's TLS cert."
-}
-
-variable "tls_client_cert_early_renewal_hours" {
-  description = "The early renewal period in hours of the external client's TLS cert. Set this variable to a time period that is earlier than the cert validity to force Terraform to generate a new cert before the existing one expires. "
+variable "tls_cert_early_renewal_hours" {
+  description = "The early renewal period in hours of the Kubernetes and etcd clusters' TLS cert. Set this variable to a time period that is earlier than the cert validity to force Terraform to generate a new cert before the existing one expires. "
 }
 
 variable "fleet_agent_ttl" {
@@ -336,8 +348,8 @@ variable "k8s_token_auth_file" {
   default = "/opt/k8s/auth/token.csv"
 }
 
-variable "k8s_worker_count" {
-  default = 2
+variable "k8s_workers_count" {
+  default = 3
 }
 
 variable "k8s_dns_home" {
