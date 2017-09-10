@@ -7,6 +7,7 @@ resource "digitalocean_droplet" "etcd" {
   private_networking = "true"
   ssh_keys = ["${var.droplet_private_key_id}"]
   user_data = "${element(data.ct_config.etcd.*.rendered, count.index)}"
+  volume_ids = ["${element(digitalocean_volume.etcd_data.*.id, count.index)}"]
 }
 
 resource "null_resource" "etcd_tls" {
@@ -38,6 +39,14 @@ resource "null_resource" "etcd_tls" {
     content = "${element(tls_private_key.etcd_key.*.private_key_pem, count.index)}"
     destination = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_key_file}"
   }
+}
+
+resource "digitalocean_volume" "etcd_data" {
+  count = "${var.etcd_count}"
+
+  name = "${format("etcd-%02d-data", count.index)}"
+  region = "${var.droplet_region}"
+  size = 10
 }
 
 data "ct_config" "etcd" {
