@@ -54,7 +54,7 @@ ${tls_private_key.skydns_key.private_key_pem}
 KEY
 
 sudo cat <<CERT > ${var.skydns_ca_file}
-${tls_self_signed_cert.ca_cert.cert_pem}
+${tls_self_signed_cert.cacert.cert_pem}
 CERT
 
 sudo systemctl enable ${var.skydns_unit_files_home}/*
@@ -125,9 +125,9 @@ resource "tls_cert_request" "skydns_csr" {
 
 resource "tls_locally_signed_cert" "skydns_cert" {
   cert_request_pem = "${tls_cert_request.skydns_csr.cert_request_pem}"
-  ca_key_algorithm = "${tls_private_key.ca_key.algorithm}"
-  ca_private_key_pem = "${tls_private_key.ca_key.private_key_pem}"
-  ca_cert_pem = "${tls_self_signed_cert.ca_cert.cert_pem}"
+  ca_key_algorithm = "${tls_private_key.cakey.algorithm}"
+  ca_private_key_pem = "${tls_private_key.cakey.private_key_pem}"
+  ca_cert_pem = "${tls_self_signed_cert.cacert.cert_pem}"
   validity_period_hours = "${var.tls_cert_validity_period_hours}"
   allowed_uses = [
     "key_encipherment",

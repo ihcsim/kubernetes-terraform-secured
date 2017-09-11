@@ -1,0 +1,109 @@
+systemd:
+  units:
+    - name: kube-apiserver.service
+      enable: true
+      contents: |
+        [Unit]
+        Description=Kubernetes API Server
+        Documentation=http://kubernetes.io/docs/admin/kube-apiserver/
+        Requires=coreos-metadata.service
+        After=coreos-metadata.service
+        After=docker.service
+        Wants=docker.service
+
+        [Service]
+        EnvironmentFile=/run/metadata/coreos
+        ExecStart=/opt/k8s/bin/kube-apiserver \
+          --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota,NodeRestriction \
+          --advertise-address=$${COREOS_DIGITALOCEAN_IPV4_PRIVATE_0} \
+          --allow-privileged=true \
+          --apiserver-count=${apiserver_count} \
+          --audit-log-maxage=30 \
+          --audit-log-maxbackup=3 \
+          --audit-log-maxsize=100 \
+          --audit-log-path=/var/log/audit.log \
+          --bind-address=0.0.0.0 \
+          --client-ca-file=${cacert_file} \
+          --enable-swagger-ui=true \
+          --etcd-cafile=${cacert_file} \
+          --etcd-certfile=${cert_file} \
+          --etcd-keyfile=${key_file} \
+          --etcd-servers=${etcd_endpoints} \
+          --event-ttl=1h \
+          #--experimental-encryption-provider-config=${apiserver_encryption_config_file} \
+          --insecure-bind-address=0.0.0.0 \
+          --insecure-port=${apiserver_insecure_port} \
+          --kubelet-certificate-authority=${cacert_file} \
+          --kubelet-client-certificate=${cert_file} \
+          --kubelet-client-key=${key_file} \
+          --kubelet-https=true \
+          --runtime-config=rbac.authorization.k8s.io/v1alpha1 \
+          --secure-port=${apiserver_secure_port} \
+          --service-account-key-file=${cakey_file} \
+          --service-cluster-ip-range=${service_cluster_ip_range} \
+          --service-node-port-range=${service_node_port_range} \
+          --tls-ca-file=${cacert_file} \
+          --tls-cert-file=${cert_file} \
+          --tls-private-key-file=${key_file} \
+          --v=2
+        Restart=on-failure
+        RestartSec=5
+
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: kube-controller-manager.service
+      enable: true
+      contents: |
+        [Unit]
+        Description=Kubernetes Controller Manager
+        Requires=coreos-metadata.service
+        After=coreos-metadata.service
+        After=docker.service
+        After=kube-apiserver.service
+        Wants=docker.service
+        Wants=kube-apiserver.service
+
+        [Service]
+        EnvironmentFile=/run/metadata/coreos
+        ExecStart=/opt/k8s/bin/kube-controller-manager \
+          --address=0.0.0.0 \
+          --cluster-cidr=${cluster_cidr} \
+          --cluster-name=${cluster_name} \
+          --cluster-signing-cert-file=${cacert_file} \
+          --cluster-signing-key-file=${cakey_file} \
+          --leader-elect=true \
+          --master=http://$${COREOS_DIGITALOCEAN_IPV4_PRIVATE_0}:${apiserver_insecure_port} \
+          --root-ca-file=${cacert_file} \
+          --service-account-private-key-file=${cakey_file} \
+          --service-cluster-ip-range=${service_cluster_ip_range} \
+          --v=2
+        Restart=on-failure
+        RestartSec=5
+
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: kube-scheduler.service
+      enable: true
+      contents: |
+        [Unit]
+        Description=Kubernetes Scheduler
+        Requires=coreos-metadata.service
+        After=coreos-metadata.service
+        After=docker.service
+        After=kube-apiserver.service
+        Wants=docker.service
+        Wants=kube-apiserver.service
+
+        [Service]
+        EnvironmentFile=/run/metadata/coreos
+        ExecStart=/opt/k8s/bin/kube-scheduler \
+          --leader-elect=true \
+          --master=http://$${COREOS_DIGITALOCEAN_IPV4_PRIVATE_0}:${apiserver_insecure_port}\
+          --v=2
+        Restart=on-failure
+        RestartSec=5
+
+        [Install]
+        WantedBy=multi-user.target

@@ -1,11 +1,11 @@
-resource "tls_private_key" "ca_key" {
+resource "tls_private_key" "cakey" {
   algorithm = "RSA"
   rsa_bits = 4096
 }
 
-resource "tls_self_signed_cert" "ca_cert" {
-  key_algorithm = "${tls_private_key.ca_key.algorithm}"
-  private_key_pem = "${tls_private_key.ca_key.private_key_pem}"
+resource "tls_self_signed_cert" "cacert" {
+  key_algorithm = "${tls_private_key.cakey.algorithm}"
+  private_key_pem = "${tls_private_key.cakey.private_key_pem}"
 
   subject {
     common_name = "${var.tls_cacert_subject_common_name}"

@@ -84,32 +84,64 @@ variable "etcd_election_timeout" {
   default = 5000
 }
 
-variable "etcd_ssl_home" {
-  default = "/etc/ssl/certs"
+variable "k8s_version" {
+  default = "v1.7.0"
 }
 
-variable "etcd_trusted_ca_file" {
-  default = "ca.pem"
+variable "k8s_cluster_name" {
+  default = "do-k8s"
 }
 
-variable "etcd_key_file" {
+variable "k8s_cluster_dns_ip" {
+	default = "10.32.0.10"
+}
+
+variable "k8s_cluster_domain" {
+  default = "kubernetes.cluster"
+}
+
+variable "k8s_cluster_cidr" {
+  default = "10.200.0.0/16"
+}
+
+variable "k8s_service_cluster_ip_range" {
+  default = "10.32.0.0/24"
+}
+
+variable "k8s_service_node_port_range" {
+  default = "30000-32767"
+}
+
+variable "k8s_apiserver_count" {
+  default = 3
+}
+
+variable "k8s_apiserver_insecure_port" {
+  default = 8080
+}
+
+variable "k8s_apiserver_secure_port" {
+  default = 6443
+}
+
+variable "k8s_apiserver_encryption_config_file" {
+  default = "/opt/k8s/encryption-config.yaml"
+}
+
+variable "tls_cacert_file" {
+  default = "cacert.pem"
+}
+
+variable "tls_cakey_file" {
+  default = "cakey.pem"
+}
+
+variable "tls_key_file" {
   default = "key.pem"
 }
 
-variable "etcd_cert_file" {
+variable "tls_cert_file" {
   default = "cert.pem"
-}
-
-variable "k8s_apiserver_token_admin" {
-  description = "The 'admin' user's bearer token used to authenticate against the API Server. Refer http://kubernetes.io/docs/admin/authentication/#static-token-file for more details."
-}
-
-variable "k8s_apiserver_token_kubelet" {
-  description = "The 'kubelet' user's bearer token used to authenticate against the API Server. Refer http://kubernetes.io/docs/admin/authentication/#static-token-file for more details."
-}
-
-variable "k8s_apiserver_basic_auth_admin" {
-  description = "Basic authentication password for the 'admin' user to access the Kubernetes dashboard. Refer http://kubernetes.io/docs/admin/authentication/#static-password-file for more details."
 }
 
 variable "tls_cacert_subject_common_name" {
@@ -244,68 +276,8 @@ variable "local_kubectl_key_file" {
   default = ".tls/kubectl-key.pem"
 }
 
-variable "k8s_version" {
-  default = "v1.7.0"
-}
-
-variable "k8s_cluster_name" {
-  default = "do-k8s"
-}
-
 variable "k8s_tls_home" {
   default = "/opt/k8s/tls"
-}
-
-variable "k8s_key_file" {
-  default = "/opt/k8s/tls/key.pem"
-}
-
-variable "k8s_cert_file" {
-  default = "/opt/k8s/tls/cert.pem"
-}
-
-variable "k8s_ca_file" {
-  default = "/opt/k8s/tls/ca.pem"
-}
-
-variable "k8s_ca_key_file" {
-  default = "/opt/k8s/tls/ca-key.pem"
-}
-
-variable "k8s_client_ca_file" {
-  default = "/opt/k8s/tls/client-ca.pem"
-}
-
-variable "k8s_client_cert_file" {
-  default = "/opt/k8s/tls/client-cert.pem"
-}
-
-variable "k8s_client_key_file" {
-  default = "/opt/k8s/tls/client-key.pem"
-}
-
-variable "k8s_cluster_dns_ip" {
-	default = "10.32.0.10"
-}
-
-variable "k8s_cluster_domain" {
-  default = "kubernetes.local"
-}
-
-variable "k8s_cluster_cidr" {
-  default = "10.200.0.0/16"
-}
-
-variable "k8s_apiserver_insecure_port" {
-  default = 7000
-}
-
-variable "k8s_apiserver_secure_port" {
-  default = 6443
-}
-
-variable "k8s_service_cluster_ip_range" {
-  default = "10.32.0.0/24"
 }
 
 variable "k8s_home" {
@@ -322,30 +294,6 @@ variable "k8s_bin_home" {
 
 variable "k8s_lib_home" {
   default = "/opt/k8s/lib"
-}
-
-variable "k8s_kubeconfig_file" {
-  default = "/opt/k8s/lib/kubeconfig"
-}
-
-variable "k8s_unit_files_home" {
-  default = "/opt/k8s/unit-files"
-}
-
-variable "k8s_auth_home" {
-  default = "/opt/k8s/auth"
-}
-
-variable "k8s_auth_policy_file" {
-  default = "/opt/k8s/auth/authorization-policy.json"
-}
-
-variable "k8s_basic_auth_file" {
-  default = "/opt/k8s/auth/basic"
-}
-
-variable "k8s_token_auth_file" {
-  default = "/opt/k8s/auth/token.csv"
 }
 
 variable "k8s_workers_count" {

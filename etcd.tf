@@ -70,7 +70,7 @@ data "template_file" "etcd_config" {
     etcd_heartbeat_interval = "${var.etcd_heartbeat_interval}"
     etcd_election_timeout = "${var.etcd_election_timeout}"
 
-    cacert = "${jsonencode(tls_self_signed_cert.ca_cert.cert_pem)}"
+    cacert = "${jsonencode(tls_self_signed_cert.cacert.cert_pem)}"
     cacert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cacert_file}"
     cert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cert_file}"
     key_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_key_file}"
@@ -116,9 +116,9 @@ resource "tls_locally_signed_cert" "etcd_cert" {
   count = "${var.etcd_count}"
 
   cert_request_pem = "${element(tls_cert_request.etcd_csr.*.cert_request_pem, count.index)}"
-  ca_private_key_pem = "${tls_private_key.ca_key.private_key_pem}"
-  ca_key_algorithm = "${tls_private_key.ca_key.algorithm}"
-  ca_cert_pem = "${tls_self_signed_cert.ca_cert.cert_pem}"
+  ca_private_key_pem = "${tls_private_key.cakey.private_key_pem}"
+  ca_key_algorithm = "${tls_private_key.cakey.algorithm}"
+  ca_cert_pem = "${tls_self_signed_cert.cacert.cert_pem}"
 
   validity_period_hours = "${var.tls_cert_validity_period_hours}"
   early_renewal_hours = "${var.tls_cert_early_renewal_hours}"
