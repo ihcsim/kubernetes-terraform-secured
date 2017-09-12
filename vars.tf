@@ -97,7 +97,7 @@ variable "k8s_cluster_dns_ip" {
 }
 
 variable "k8s_cluster_domain" {
-  default = "kubernetes.cluster"
+  default = "kubernetes.internal"
 }
 
 variable "k8s_cluster_cidr" {
@@ -294,6 +294,14 @@ variable "k8s_bin_home" {
 
 variable "k8s_lib_home" {
   default = "/opt/k8s/lib"
+}
+
+variable "k8s_lib_kubelet_home" {
+  default = "/opt/k8s/lib/kubelet"
+}
+
+variable "k8s_lib_kube_proxy_home" {
+  default = "/opt/k8s/lib/kube-proxy"
 }
 
 variable "k8s_workers_count" {

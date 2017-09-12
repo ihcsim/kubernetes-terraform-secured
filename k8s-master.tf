@@ -106,6 +106,10 @@ resource "tls_cert_request" "kube_apiserver" {
   key_algorithm = "${tls_private_key.kube_apiserver.algorithm}"
   private_key_pem = "${tls_private_key.kube_apiserver.private_key_pem}"
 
+  ip_addresses = [
+    "${digitalocean_droplet.k8s_master.ipv4_address_private}",
+  ]
+
   subject {
     common_name = "${var.tls_kube_apiserver_cert_subject_common_name}"
     organization = "${var.tls_kube_apiserver_cert_subject_organization}"
@@ -120,86 +124,6 @@ resource "tls_cert_request" "kube_apiserver" {
 
 resource "tls_locally_signed_cert" "kube_apiserver" {
   cert_request_pem = "${tls_cert_request.kube_apiserver.cert_request_pem}"
-  ca_key_algorithm = "${tls_private_key.cakey.algorithm}"
-  ca_private_key_pem = "${tls_private_key.cakey.private_key_pem}"
-  ca_cert_pem = "${tls_self_signed_cert.cacert.cert_pem}"
-  validity_period_hours = "${var.tls_cert_validity_period_hours}"
-  early_renewal_hours = "${var.tls_cert_early_renewal_hours}"
-
-  allowed_uses = [
-    "server_auth",
-    "client_auth"
-  ]
-}
-
-resource "tls_private_key" "kube_proxy" {
-  algorithm = "RSA"
-  rsa_bits = 4096
-}
-
-resource "tls_cert_request" "kube_proxy" {
-  key_algorithm = "${tls_private_key.kube_proxy.algorithm}"
-  private_key_pem = "${tls_private_key.kube_proxy.private_key_pem}"
-
-  subject {
-    common_name = "${var.tls_kube_proxy_cert_subject_common_name}"
-    organization = "${var.tls_kube_proxy_cert_subject_organization}"
-    organizational_unit = "${var.tls_cert_subject_organizational_unit}"
-    street_address = ["${var.tls_cert_subject_street_address}"]
-    locality = "${var.tls_cert_subject_locality}"
-    province = "${var.tls_cert_subject_province}"
-    country = "${var.tls_cert_subject_country}"
-    postal_code = "${var.tls_cert_subject_postal_code}"
-  }
-}
-
-resource "tls_locally_signed_cert" "kube_proxy" {
-  cert_request_pem = "${tls_cert_request.kube_proxy.cert_request_pem}"
-  ca_key_algorithm = "${tls_private_key.cakey.algorithm}"
-  ca_private_key_pem = "${tls_private_key.cakey.private_key_pem}"
-  ca_cert_pem = "${tls_self_signed_cert.cacert.cert_pem}"
-  validity_period_hours = "${var.tls_cert_validity_period_hours}"
-  early_renewal_hours = "${var.tls_cert_early_renewal_hours}"
-
-  allowed_uses = [
-    "server_auth",
-    "client_auth"
-  ]
-}
-
-resource "tls_private_key" "k8s_workers" {
-  count = "${var.k8s_workers_count}"
-
-  algorithm = "RSA"
-  rsa_bits = 4096
-}
-
-resource "tls_cert_request" "k8s_workers" {
-  count = "${var.k8s_workers_count}"
-
-  key_algorithm = "${element(tls_private_key.k8s_workers.*.algorithm, count.index)}"
-  private_key_pem = "${element(tls_private_key.k8s_workers.*.private_key_pem, count.index)}"
-
-  subject {
-    common_name = "${var.tls_workers_cert_subject_common_name}:${count.index}"
-    organization = "${var.tls_workers_cert_subject_organization}"
-    organizational_unit = "${var.tls_cert_subject_organizational_unit}"
-    street_address = ["${var.tls_cert_subject_street_address}"]
-    locality = "${var.tls_cert_subject_locality}"
-    province = "${var.tls_cert_subject_province}"
-    country = "${var.tls_cert_subject_country}"
-    postal_code = "${var.tls_cert_subject_postal_code}"
-  }
-
-  #ip_addresses = [
-    #"${element(digitalocean_droplet.k8s_workers.*.ipv4_address_private, count.index)}",
-  #]
-}
-
-resource "tls_locally_signed_cert" "k8s_workers" {
-  count = "${var.k8s_workers_count}"
-
-  cert_request_pem = "${element(tls_cert_request.k8s_workers.*.cert_request_pem, count.index)}"
   ca_key_algorithm = "${tls_private_key.cakey.algorithm}"
   ca_private_key_pem = "${tls_private_key.cakey.private_key_pem}"
   ca_cert_pem = "${tls_self_signed_cert.cacert.cert_pem}"
