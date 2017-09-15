@@ -107,7 +107,14 @@ resource "tls_cert_request" "kube_apiserver" {
   private_key_pem = "${tls_private_key.kube_apiserver.private_key_pem}"
 
   ip_addresses = [
-    "${digitalocean_droplet.k8s_master.ipv4_address_private}",
+    "${digitalocean_droplet.k8s_master.ipv4_address_private}"
+  ]
+
+  dns_names = [
+    "${element(digitalocean_droplet.k8s_workers.*.name, count.index)}",
+    "${element(digitalocean_droplet.k8s_workers.*.name, count.index)}.${var.droplet_domain}",
+    "kubernetes.default",
+    "127.0.0.1"
   ]
 
   subject {

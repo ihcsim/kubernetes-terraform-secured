@@ -67,12 +67,12 @@ resource "null_resource" "k8s_workers_tls" {
   }
 
   provisioner "file" {
-    content = "${element(tls_locally_signed_cert.k8s_workers.*.cert_pem, count.index)}"
+    content = "${element(tls_locally_signed_cert.kubelet.*.cert_pem, count.index)}"
     destination = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cert_file}"
   }
 
   provisioner "file" {
-    content = "${element(tls_private_key.k8s_workers.*.private_key_pem, count.index)}"
+    content = "${element(tls_private_key.kubelet.*.private_key_pem, count.index)}"
     destination = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_key_file}"
   }
 }
@@ -143,19 +143,18 @@ data "template_file" "kube_proxy_config" {
   }
 }
 
-
-resource "tls_private_key" "k8s_workers" {
+resource "tls_private_key" "kubelet" {
   count = "${var.k8s_workers_count}"
 
   algorithm = "RSA"
   rsa_bits = 4096
 }
 
-resource "tls_cert_request" "k8s_workers" {
+resource "tls_cert_request" "kubelet" {
   count = "${var.k8s_workers_count}"
 
-  key_algorithm = "${element(tls_private_key.k8s_workers.*.algorithm, count.index)}"
-  private_key_pem = "${element(tls_private_key.k8s_workers.*.private_key_pem, count.index)}"
+  key_algorithm = "${element(tls_private_key.kubelet.*.algorithm, count.index)}"
+  private_key_pem = "${element(tls_private_key.kubelet.*.private_key_pem, count.index)}"
 
   subject {
     common_name = "${var.tls_workers_cert_subject_common_name}:${element(digitalocean_droplet.k8s_workers.*.name, count.index)}"
@@ -169,14 +168,19 @@ resource "tls_cert_request" "k8s_workers" {
   }
 
   ip_addresses = [
-    "${element(digitalocean_droplet.k8s_workers.*.ipv4_address_private, count.index)}",
+    "${element(digitalocean_droplet.k8s_workers.*.ipv4_address_private, count.index)}"
+  ]
+
+  dns_names = [
+    "${element(digitalocean_droplet.k8s_workers.*.name, count.index)}",
+    "${element(digitalocean_droplet.k8s_workers.*.name, count.index)}.${var.droplet_domain}"
   ]
 }
 
-resource "tls_locally_signed_cert" "k8s_workers" {
+resource "tls_locally_signed_cert" "kubelet" {
   count = "${var.k8s_workers_count}"
 
-  cert_request_pem = "${element(tls_cert_request.k8s_workers.*.cert_request_pem, count.index)}"
+  cert_request_pem = "${element(tls_cert_request.kubelet.*.cert_request_pem, count.index)}"
   ca_key_algorithm = "${tls_private_key.cakey.algorithm}"
   ca_private_key_pem = "${tls_private_key.cakey.private_key_pem}"
   ca_cert_pem = "${tls_self_signed_cert.cacert.cert_pem}"

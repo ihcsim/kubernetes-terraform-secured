@@ -162,16 +162,6 @@ variable "tls_etcd_cert_subject_organization" {
   default = "system:etcd"
 }
 
-variable "tls_skydns_cert_subject_common_name" {
-  description = "The SkyDNS TLS cert subject organization name."
-  default = "system:dns"
-}
-
-variable "tls_skydns_cert_subject_organization" {
-  description = "The SkyDNS TLS cert subject organization name."
-  default = "system:dns"
-}
-
 variable "tls_kube_apiserver_cert_subject_common_name" {
   description = "The kubernetes API Server TLS cert subject organization name."
   default = "kubernetes"
