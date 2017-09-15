@@ -97,6 +97,7 @@ data "template_file" "k8s_master_config" {
     apiserver_secure_port = "${var.k8s_apiserver_secure_port}"
 
     etcd_endpoints = "${join(",", formatlist("https://%s:%s", digitalocean_droplet.etcd.*.ipv4_address_private, var.etcd_client_port))}"
+    etcd_client_port = "${var.etcd_client_port}"
 
     cacert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cacert_file}"
     cakey_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cakey_file}"
@@ -108,6 +109,10 @@ data "template_file" "k8s_master_config" {
 
     service_cluster_ip_range = "${var.k8s_service_cluster_ip_range}"
     service_node_port_range = "${var.k8s_service_node_port_range}"
+
+    maintenance_window_start = "${var.droplet_maintenance_window_start}"
+    maintenance_window_length = "${var.droplet_maintenance_window_length}"
+    update_channel = "${var.droplet_update_channel}"
   }
 }
 

@@ -108,8 +108,15 @@ data "template_file" "k8s_workers_config" {
     kube_proxy_config_file = "${var.k8s_lib_kube_proxy_home}/config"
     kube_proxy_config = "${jsonencode(data.template_file.kube_proxy_config.rendered)}"
 
+    etcd_client_port = "${var.etcd_client_port}"
+
+    cacert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cacert_file}"
     cert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cert_file}"
     key_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_key_file}"
+
+    maintenance_window_start = "${var.droplet_maintenance_window_start}"
+    maintenance_window_length = "${var.droplet_maintenance_window_length}"
+    update_channel = "${var.droplet_update_channel}"
   }
 }
 

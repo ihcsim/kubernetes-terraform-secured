@@ -107,3 +107,15 @@ systemd:
 
         [Install]
         WantedBy=multi-user.target
+
+update:
+  group: ${update_channel}
+
+locksmith:
+  reboot_strategy: etcd-lock
+  window_start: ${maintenance_window_start}
+  window_length: ${maintenance_window_length}
+  etcd_endpoints: https://{PRIVATE_IPV4}:${etcd_client_port}
+  etcd_cafile: ${cacert_file}
+  etcd_certfile: ${cert_file}
+  etcd_keyfile: ${key_file}
