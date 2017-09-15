@@ -124,6 +124,10 @@ variable "k8s_apiserver_secure_port" {
   default = 6443
 }
 
+variable "k8s_apiserver_encryption_key" {
+  description = "Encryption key used in the API server's encryption config"
+}
+
 variable "k8s_apiserver_encryption_config_file" {
   default = "/opt/k8s/encryption-config.yaml"
 }

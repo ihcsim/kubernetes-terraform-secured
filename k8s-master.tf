@@ -111,6 +111,14 @@ data "template_file" "k8s_master_config" {
   }
 }
 
+data "template_file" "k8s_apiserver_encryption_config" {
+  template = "${file("${path.module}/k8s/master/encryption.yaml")}"
+
+  vars {
+    encryption_key = "${var.k8s_apiserver_encryption_key}"
+  }
+}
+
 resource "tls_private_key" "kube_apiserver" {
   count = "${var.k8s_apiserver_count}"
 

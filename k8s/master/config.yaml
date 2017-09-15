@@ -30,7 +30,7 @@ systemd:
           --etcd-keyfile=${key_file} \
           --etcd-servers=${etcd_endpoints} \
           --event-ttl=1h \
-          #--experimental-encryption-provider-config=${apiserver_encryption_config_file} \
+          --experimental-encryption-provider-config=${apiserver_encryption_config_file} \
           --insecure-bind-address=0.0.0.0 \
           --insecure-port=${apiserver_insecure_port} \
           --kubelet-certificate-authority=${cacert_file} \
