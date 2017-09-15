@@ -1,5 +1,7 @@
-resource "digitalocean_droplet" "k8s_master" {
-  name = "k8s-master"
+resource "digitalocean_droplet" "k8s_masters" {
+  count = "${var.k8s_apiserver_count}"
+
+  name = "${format("k8s-master-%02d", count.index)}"
   image = "${var.coreos_image}"
   region = "${var.droplet_region}"
   size = "2GB"
@@ -27,17 +29,29 @@ resource "digitalocean_droplet" "k8s_master" {
       "chmod +x ${var.k8s_bin_home}/*"
     ]
   }
+
+  connection {
+    user = "${var.droplet_ssh_user}"
+    private_key = "${file(var.droplet_private_key_file)}"
+  }
+
+  provisioner "file" {
+    content = "${data.template_file.k8s_apiserver_encryption_config.rendered}"
+    destination = "${var.k8s_home}/encryption.yaml"
+  }
 }
 
-resource "null_resource" "k8s_master_tls" {
+resource "null_resource" "k8s_masters_tls" {
+  count = "${var.k8s_apiserver_count}"
+
   triggers {
-    droplet = "digitalocean_droplet.k8s_master.id"
+    droplet = "${join(",", digitalocean_droplet.k8s_masters.*.id)}"
   }
 
   connection {
     user = "${var.droplet_ssh_user}"
     private_key = "${file(var.droplet_private_key_file)}"
-    host = "${digitalocean_droplet.k8s_master.ipv4_address}"
+    host = "${element(digitalocean_droplet.k8s_masters.*.ipv4_address, count.index)}"
   }
 
   provisioner "remote-exec" {
@@ -58,12 +72,12 @@ resource "null_resource" "k8s_master_tls" {
   }
 
   provisioner "file" {
-    content = "${tls_locally_signed_cert.kube_apiserver.cert_pem}"
+    content = "${element(tls_locally_signed_cert.kube_apiserver.*.cert_pem, count.index)}"
     destination = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cert_file}"
   }
 
   provisioner "file" {
-    content = "${tls_private_key.kube_apiserver.private_key_pem}"
+    content = "${element(tls_private_key.kube_apiserver.*.private_key_pem, count.index)}"
     destination = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_key_file}"
   }
 }
@@ -78,7 +92,7 @@ data "template_file" "k8s_master_config" {
 
   vars {
     apiserver_count = "${var.k8s_apiserver_count}"
-    apiserver_encryption_config_file = "${var.k8s_apiserver_encryption_config_file}"
+    apiserver_encryption_config_file = "${var.k8s_home}/encryption.yaml"
     apiserver_insecure_port = "${var.k8s_apiserver_insecure_port}"
     apiserver_secure_port = "${var.k8s_apiserver_secure_port}"
 
@@ -98,23 +112,20 @@ data "template_file" "k8s_master_config" {
 }
 
 resource "tls_private_key" "kube_apiserver" {
+  count = "${var.k8s_apiserver_count}"
+
   algorithm = "RSA"
   rsa_bits = 4096
 }
 
 resource "tls_cert_request" "kube_apiserver" {
-  key_algorithm = "${tls_private_key.kube_apiserver.algorithm}"
-  private_key_pem = "${tls_private_key.kube_apiserver.private_key_pem}"
+  count = "${var.k8s_apiserver_count}"
+
+  key_algorithm = "${element(tls_private_key.kube_apiserver.*.algorithm, count.index)}"
+  private_key_pem = "${element(tls_private_key.kube_apiserver.*.private_key_pem, count.index)}"
 
   ip_addresses = [
-    "${digitalocean_droplet.k8s_master.ipv4_address_private}"
-  ]
-
-  dns_names = [
-    "${element(digitalocean_droplet.k8s_workers.*.name, count.index)}",
-    "${element(digitalocean_droplet.k8s_workers.*.name, count.index)}.${var.droplet_domain}",
-    "kubernetes.default",
-    "127.0.0.1"
+    "${element(digitalocean_droplet.k8s_masters.*.ipv4_address_private, count.index)}"
   ]
 
   subject {
@@ -130,7 +141,9 @@ resource "tls_cert_request" "kube_apiserver" {
 }
 
 resource "tls_locally_signed_cert" "kube_apiserver" {
-  cert_request_pem = "${tls_cert_request.kube_apiserver.cert_request_pem}"
+  count = "${var.k8s_apiserver_count}"
+
+  cert_request_pem = "${element(tls_cert_request.kube_apiserver.*.cert_request_pem, count.index)}"
   ca_key_algorithm = "${tls_private_key.cakey.algorithm}"
   ca_private_key_pem = "${tls_private_key.cakey.private_key_pem}"
   ca_cert_pem = "${tls_self_signed_cert.cacert.cert_pem}"

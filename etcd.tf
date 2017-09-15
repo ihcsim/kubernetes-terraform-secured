@@ -100,11 +100,6 @@ resource "tls_cert_request" "etcd_csr" {
     "${element(digitalocean_droplet.etcd.*.ipv4_address_private, count.index)}"
   ]
 
-  dns_names = [
-    "${element(digitalocean_droplet.etcd.*.name, count.index)}",
-    "${element(digitalocean_droplet.etcd.*.name, count.index)}.${var.droplet_domain}"
-  ]
-
   subject = {
     common_name = "${var.tls_etcd_cert_subject_common_name}"
     organization = "${var.tls_etcd_cert_subject_organization}"

@@ -56,7 +56,7 @@ resource "null_resource" "k8s_workers_tls" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo mkdir -p ${var.droplet_tls_certs_home}/${var.droplet_domain}",
+      "sudo mkdir -p ${var.droplet_tls_certs_home}/${var.droplet_domain}/kubelet ${var.droplet_tls_certs_home}/${var.droplet_domain}/kube-proxy",
       "sudo chown -R ${var.droplet_ssh_user} ${var.droplet_tls_certs_home}/${var.droplet_domain}"
     ]
   }
@@ -68,12 +68,22 @@ resource "null_resource" "k8s_workers_tls" {
 
   provisioner "file" {
     content = "${element(tls_locally_signed_cert.kubelet.*.cert_pem, count.index)}"
-    destination = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cert_file}"
+    destination = "${var.droplet_tls_certs_home}/${var.droplet_domain}/kubelet/${var.tls_cert_file}"
   }
 
   provisioner "file" {
     content = "${element(tls_private_key.kubelet.*.private_key_pem, count.index)}"
-    destination = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_key_file}"
+    destination = "${var.droplet_tls_certs_home}/${var.droplet_domain}/kubelet/${var.tls_key_file}"
+  }
+
+  provisioner "file" {
+    content = "${tls_locally_signed_cert.kube_proxy.cert_pem}"
+    destination = "${var.droplet_tls_certs_home}/${var.droplet_domain}/kube-proxy/${var.tls_cert_file}"
+  }
+
+  provisioner "file" {
+    content = "${tls_private_key.kube_proxy.private_key_pem}"
+    destination = "${var.droplet_tls_certs_home}/${var.droplet_domain}/kube-proxy/${var.tls_key_file}"
   }
 }
 
@@ -108,11 +118,11 @@ data "template_file" "kubelet_kubeconfig" {
   template = "${file("${path.module}/k8s/workers/kubeconfig")}"
 
   vars {
-    apiserver_endpoint = "${format("https://%s:%s", digitalocean_droplet.k8s_master.ipv4_address_private, var.k8s_apiserver_secure_port)}"
+    apiserver_endpoint = "${format("https://%s:%s", digitalocean_droplet.k8s_masters.0.ipv4_address_private, var.k8s_apiserver_secure_port)}"
 
     cacert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cacert_file}"
-    client_cert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cert_file}"
-    client_key_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_key_file}"
+    client_cert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/kubelet/${var.tls_cert_file}"
+    client_key_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/kubelet/${var.tls_key_file}"
 
     cluster_name = "${var.k8s_cluster_name}"
     username = "${format("k8s-worker-%02d", count.index)}"
@@ -123,11 +133,11 @@ data "template_file" "kube_proxy_kubeconfig" {
   template = "${file("${path.module}/k8s/workers/kubeconfig")}"
 
   vars {
-    apiserver_endpoint = "${format("https://%s:%s", digitalocean_droplet.k8s_master.ipv4_address_private, var.k8s_apiserver_secure_port)}"
+    apiserver_endpoint = "${format("https://%s:%s", digitalocean_droplet.k8s_masters.0.ipv4_address_private, var.k8s_apiserver_secure_port)}"
 
     cacert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cacert_file}"
-    client_cert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cert_file}"
-    client_key_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_key_file}"
+    client_cert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/kube-proxy/${var.tls_cert_file}"
+    client_key_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/kube-proxy/${var.tls_key_file}"
 
     cluster_name = "${var.k8s_cluster_name}"
     username = "kube-proxy"
@@ -169,11 +179,6 @@ resource "tls_cert_request" "kubelet" {
 
   ip_addresses = [
     "${element(digitalocean_droplet.k8s_workers.*.ipv4_address_private, count.index)}"
-  ]
-
-  dns_names = [
-    "${element(digitalocean_droplet.k8s_workers.*.name, count.index)}",
-    "${element(digitalocean_droplet.k8s_workers.*.name, count.index)}.${var.droplet_domain}"
   ]
 }
 
