@@ -124,6 +124,21 @@ data "template_file" "k8s_apiserver_encryption_config" {
   }
 }
 
+data "template_file" "kubeconfig" {
+  template = "${file("${path.module}/k8s/master/kubeconfig")}"
+
+  vars {
+    apiserver_endpoint = "${format("https://%s:%s", digitalocean_droplet.k8s_masters.0.ipv4_address, var.k8s_apiserver_secure_port)}"
+
+    cacert = "${base64encode(tls_self_signed_cert.cacert.cert_pem)}"
+    client_cert = "${base64encode(tls_locally_signed_cert.k8s_admin_client.cert_pem)}"
+    client_key = "${base64encode(tls_private_key.k8s_admin_client.private_key_pem)}"
+
+    cluster_name = "${var.k8s_cluster_name}"
+    username = "default"
+  }
+}
+
 resource "tls_private_key" "kube_apiserver" {
   count = "${var.k8s_apiserver_count}"
 
@@ -172,7 +187,7 @@ resource "tls_locally_signed_cert" "kube_apiserver" {
 
 resource "tls_private_key" "k8s_admin_client" {
   algorithm = "RSA"
-  rsa_bits = 4096
+  rsa_bits = 2048
 }
 
 resource "tls_cert_request" "k8s_admin_client" {
