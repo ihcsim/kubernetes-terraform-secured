@@ -3,3 +3,4 @@
 .tls
 *.swp
 .terraform
+.kubeconfig

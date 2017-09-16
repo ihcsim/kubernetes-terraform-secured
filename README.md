@@ -62,6 +62,23 @@ var.etcd_discovery_url
   Enter a value
 ```
 
+Once Terraform successfully completed the provisioning operation, the `kubeconfig` data of the new Kubernetes cluster will be output. Copy its content into your `kubeconfig` file, and then verify the cluster's accessibility.
+```sh
+$ kubectl --kubeconfig=<your_kubeconfig_file> get componentstatuses
+NAME                 STATUS    MESSAGE              ERROR
+scheduler            Healthy   ok
+controller-manager   Healthy   ok
+etcd-0               Healthy   {"health": "true"}
+etcd-2               Healthy   {"health": "true"}
+etcd-1               Healthy   {"health": "true"}
+
+$ kubectl --kubeconfig=M<your_kubeconfig_file> get no
+NAME            STATUS    AGE       VERSION
+k8s-worker-00   Ready     44s       v1.7.0
+k8s-worker-01   Ready     46s       v1.7.0
+k8s-worker-02   Ready     48s       v1.7.0
+```
+
 ## Cluster Layout
 By default, this project provisions a cluster that is comprised of:
 
