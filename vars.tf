@@ -238,48 +238,8 @@ variable "tls_cert_early_renewal_hours" {
   description = "The early renewal period in hours of the Kubernetes and etcd clusters' TLS cert. Set this variable to a time period that is earlier than the cert validity to force Terraform to generate a new cert before the existing one expires. "
 }
 
-variable "fleet_agent_ttl" {
-  default = "60s"
-}
-
-variable "fleet_etcd_request_timeout" {
-  default = "5.0"
-}
-
-variable "local_tls_home" {
-  default = ".tls"
-}
-
-variable "local_ca_file" {
-  default = ".tls/ca.pem"
-}
-
-variable "local_etcd_cert_file" {
-  default = ".tls/etcd-cert.pem"
-}
-
-variable "local_etcd_key_file" {
-  default = ".tls/etcd-key.pem"
-}
-
-variable "local_kubectl_cert_file" {
-  default = ".tls/kubectl-cert.pem"
-}
-
-variable "local_kubectl_key_file" {
-  default = ".tls/kubectl-key.pem"
-}
-
-variable "k8s_tls_home" {
-  default = "/opt/k8s/tls"
-}
-
 variable "k8s_home" {
   default = "/opt/k8s"
-}
-
-variable "k8s_apps_home" {
-  default = "/opt/k8s/apps"
 }
 
 variable "k8s_bin_home" {
@@ -300,58 +260,4 @@ variable "k8s_lib_kube_proxy_home" {
 
 variable "k8s_workers_count" {
   default = 3
-}
-
-variable "k8s_dns_home" {
-	default = "/opt/k8s/dns"
-}
-
-variable "k8s_dns_service_file" {
-  default = "/opt/k8s/dns/service.yml"
-}
-
-variable "k8s_dns_deployment_file" {
-  default = "/opt/k8s/dns/deployment.yml"
-}
-
-variable "skydns_version" {
-  default = "2.5.3a"
-}
-
-variable "skydns_home" {
-  default = "/opt/skydns"
-}
-
-variable "skydns_bin_home" {
-  default = "/opt/skydns/bin"
-}
-
-variable "skydns_unit_files_home" {
-  default = "/opt/skydns/unit-files"
-}
-
-variable "skydns_tls_home" {
-  default = "/opt/skydns/tls"
-}
-
-variable "skydns_ca_file" {
-  default = "/opt/skydns/tls/ca.pem"
-}
-
-variable "skydns_cert_file" {
-  default = "/opt/skydns/tls/cert.pem"
-}
-
-variable "skydns_key_file" {
-  default = "/opt/skydns/tls/key.pem"
-}
-
-variable "skydns_domain_key_path" {
-  default = "/skydns/local/coreos"
-  description = "The path to all the DNS record keys in etcd. This is the concentation of the pat prefix and the reverse of the droplet_domain. Refer to the https://github.com/skynetservices/skydns docs for more information."
-}
-
-variable "apps_preinstall_sleep_seconds" {
-  default = "300"
-  description = "The number of seconds to wait prior to installing the kube-system applications"
 }
