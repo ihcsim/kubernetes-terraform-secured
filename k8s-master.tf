@@ -138,7 +138,8 @@ resource "tls_cert_request" "kube_apiserver" {
   private_key_pem = "${element(tls_private_key.kube_apiserver.*.private_key_pem, count.index)}"
 
   ip_addresses = [
-    "${element(digitalocean_droplet.k8s_masters.*.ipv4_address_private, count.index)}"
+    "${element(digitalocean_droplet.k8s_masters.*.ipv4_address_private, count.index)}",
+    "${element(digitalocean_droplet.k8s_masters.*.ipv4_address, count.index)}"
   ]
 
   subject {
