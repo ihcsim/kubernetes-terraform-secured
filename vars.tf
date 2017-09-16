@@ -113,7 +113,7 @@ variable "k8s_service_node_port_range" {
 }
 
 variable "k8s_apiserver_count" {
-  default = 3
+  default = 1
 }
 
 variable "k8s_apiserver_insecure_port" {
