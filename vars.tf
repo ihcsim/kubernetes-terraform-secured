@@ -14,121 +14,17 @@ variable "droplet_private_key_id" {
   description = "ID of the SSH key used by Terraform to create the droplets. This can be obtained from the DigitalOcean web console or CLI."
 }
 
-variable "etcd_discovery_url" {
-  description = "Discovery URL obtained from https://discovery.etcd.io/new?size=N where N is the size of the etcd cluster. This must be generated for every new etcd cluster."
-}
-
-variable "k8s_apiserver_token_admin" {
-  description = "The 'admin' user's bearer token used to authenticate against the API Server. Refer http://kubernetes.io/docs/admin/authentication/#static-token-file for more details."
-}
-
-variable "k8s_apiserver_token_kubelet" {
-  description = "The 'kubelet' user's bearer token used to authenticate against the API Server. Refer http://kubernetes.io/docs/admin/authentication/#static-token-file for more details."
-}
-
-variable "k8s_apiserver_basic_auth_admin" {
-  description = "Basic authentication password for the 'admin' user to access the Kubernetes dashboard. Refer http://kubernetes.io/docs/admin/authentication/#static-password-file for more details."
-}
-
-variable "tls_ca_cert_subject_common_name" {
-  description = "The self-generated CA cert subject common name used to sign all cluster certs. The cluster certs are used to secure and validate inter-cluster requests. The subject common name of this CA cert must be different from the subject common name for the Kubernetes' certificates. Otherwise, Kubernetes will fail, complaining that it's been assigned a self-signed certificate."
-}
-
-variable "tls_cluster_cert_subject_common_name" {
-  description = "The Kubernetes and etcd clusters' TLS cert subject common name."
-}
-
-variable "tls_cluster_cert_subject_organization" {
-  description = "The Kubernetes and etcd clusters' TLS cert subject organization name."
-}
-
-variable "tls_cluster_cert_subject_organizational_unit" {
-  description = "The Kubernetes and etcd clusters' TLS cert subject organizational unit."
-}
-
-variable "tls_cluster_cert_subject_street_address" {
-  description = "The Kubernetes and etcd clusters' TLS cert subject street address."
-}
-
-variable "tls_cluster_cert_subject_locality" {
-  description = "The Kubernetes and etcd clusters' TLS cert subject locality."
-}
-
-variable "tls_cluster_cert_subject_province" {
-  description = "The Kubernetes and etcd clusters' TLS cert subject postal code."
-}
-
-variable "tls_cluster_cert_subject_postal_code" {
-  description = "The Kubernetes and etcd clusters' TLS cert subject postal code."
-}
-
-variable "tls_cluster_cert_subject_country" {
-  description = "The Kubernetes and etcd clusters' TLS cert subject 2-letter country code."
-}
-
-variable "tls_cluster_cert_subject_serial_number" {
-  description = "The Kubernetes and etcd clusters' TLS cert subject serial number."
-}
-
-variable "tls_cluster_cert_validity_period_hours" {
-  descrption = "The validity period in hours of the Kubernetes and etcd clusters' TLS cert."
-}
-
-variable "tls_cluster_cert_early_renewal_hours" {
-  description = "The early renewal period in hours of the Kubernetes and etcd clusters' TLS cert. Set this variable to a time period that is earlier than the cert validity to force Terraform to generate a new cert before the existing one expires. "
-}
-
-variable "tls_client_cert_subject_common_name" {
-  description = "The external client's TLS cert subject common name. Kubernetes uses this as the user name for the request. Refer http://kubernetes.io/docs/admin/authentication/#x509-client-certs"
-}
-
-variable "tls_client_cert_subject_organization" {
-  description = "The external client's TLS cert subject organization name. As of Kubernetes 1.4, Kubernetes uses this as the user's group. Refer http://kubernetes.io/docs/admin/authentication/#x509-client-certs"
-}
-
-variable "tls_client_cert_subject_organizational_unit" {
-  description = "The external client's TLS cert subject organizational unit."
-}
-
-variable "tls_client_cert_subject_street_address" {
-  description = "The external client's TLS cert subject street address."
-}
-
-variable "tls_client_cert_subject_locality" {
-  description = "The external client's TLS cert subject locality."
-}
-
-variable "tls_client_cert_subject_province" {
-  description = "The external client's TLS cert subject postal code."
-}
-
-variable "tls_client_cert_subject_postal_code" {
-  description = "The external client's TLS cert subject postal code."
-}
-
-variable "tls_client_cert_subject_country" {
-  description = "The external client's TLS cert subject 2-letter country code."
-}
-
-variable "tls_client_cert_subject_serial_number" {
-  description = "The external client's TLS cert subject serial number."
-}
-
-variable "tls_client_cert_validity_period_hours" {
-  descrption = "The validity period in hours of the external client's TLS cert."
-}
-
-variable "tls_client_cert_early_renewal_hours" {
-  description = "The early renewal period in hours of the external client's TLS cert. Set this variable to a time period that is earlier than the cert validity to force Terraform to generate a new cert before the existing one expires. "
-}
-
 variable "droplet_region" {
-  default = "sfo1"
+  default = "sfo2"
 }
 
 variable "droplet_domain" {
-  default = "coreos.local"
+  default = "default.cluster"
   description = "All droplets will be assigned FQDN in the form of <name>.<region>.<droplet_domain>."
+}
+
+variable "droplet_tls_certs_home" {
+  default = "/etc/ssl/certs"
 }
 
 variable "droplet_resolv_home" {
@@ -139,13 +35,37 @@ variable "droplet_resolv_file" {
   default = "/etc/systemd/resolved.conf.d/droplet.conf"
 }
 
+variable "droplet_maintenance_window_start" {
+  default = "Sun 1:00"
+}
+
+variable "droplet_maintenance_window_length" {
+  default = "2h"
+}
+
+variable "droplet_update_channel" {
+  default = "stable"
+}
+
 variable "coreos_image" {
-  default = "21378821"
-  description = "Image ID of CoreOS 1185.5.0."
+  default = "27616485"
+  description = "Image ID of CoreOS 1465.6.0."
+}
+
+variable "etcd_discovery_url" {
+  description = "Discovery URL obtained from https://discovery.etcd.io/new?size=N where N is the size of the etcd cluster. This must be generated for every new etcd cluster."
+}
+
+variable "etcd_version" {
+  default = "3.2.0"
 }
 
 variable "etcd_count" {
   default = 3
+}
+
+variable "etcd_data_dir" {
+  default = "/var/lib/etcd"
 }
 
 variable "etcd_client_port" {
@@ -157,99 +77,19 @@ variable "etcd_peer_port" {
 }
 
 variable "etcd_heartbeat_interval" {
-  default = 1000
+  default = 5000
 }
 
 variable "etcd_election_timeout" {
   default = 5000
 }
 
-variable "etcd_tls_home" {
-  default = "/etc/etcd/tls/"
-}
-
-variable "etcd_key_file" {
-  default = "/etc/etcd/tls/key.pem"
-}
-
-variable "etcd_cert_file" {
-  default = "/etc/etcd/tls/cert.pem"
-}
-
-variable "etcd_trusted_ca_file" {
-  default = "/etc/etcd/tls/ca.pem"
-}
-
-variable "fleet_agent_ttl" {
-  default = "60s"
-}
-
-variable "fleet_etcd_request_timeout" {
-  default = "5.0"
-}
-
-variable "local_tls_home" {
-  default = ".tls"
-}
-
-variable "local_ca_file" {
-  default = ".tls/ca.pem"
-}
-
-variable "local_etcd_cert_file" {
-  default = ".tls/etcd-cert.pem"
-}
-
-variable "local_etcd_key_file" {
-  default = ".tls/etcd-key.pem"
-}
-
-variable "local_kubectl_cert_file" {
-  default = ".tls/kubectl-cert.pem"
-}
-
-variable "local_kubectl_key_file" {
-  default = ".tls/kubectl-key.pem"
-}
-
 variable "k8s_version" {
-  default = "v1.4.0"
+  default = "v1.7.0"
 }
 
 variable "k8s_cluster_name" {
   default = "do-k8s"
-}
-
-variable "k8s_tls_home" {
-  default = "/opt/k8s/tls"
-}
-
-variable "k8s_key_file" {
-  default = "/opt/k8s/tls/key.pem"
-}
-
-variable "k8s_cert_file" {
-  default = "/opt/k8s/tls/cert.pem"
-}
-
-variable "k8s_ca_file" {
-  default = "/opt/k8s/tls/ca.pem"
-}
-
-variable "k8s_ca_key_file" {
-  default = "/opt/k8s/tls/ca-key.pem"
-}
-
-variable "k8s_client_ca_file" {
-  default = "/opt/k8s/tls/client-ca.pem"
-}
-
-variable "k8s_client_cert_file" {
-  default = "/opt/k8s/tls/client-cert.pem"
-}
-
-variable "k8s_client_key_file" {
-  default = "/opt/k8s/tls/client-key.pem"
 }
 
 variable "k8s_cluster_dns_ip" {
@@ -257,31 +97,149 @@ variable "k8s_cluster_dns_ip" {
 }
 
 variable "k8s_cluster_domain" {
-  default = "kubernetes.local"
+  default = "kubernetes.internal"
 }
 
 variable "k8s_cluster_cidr" {
   default = "10.200.0.0/16"
 }
 
+variable "k8s_service_cluster_ip_range" {
+  default = "10.32.0.0/24"
+}
+
+variable "k8s_service_node_port_range" {
+  default = "30000-32767"
+}
+
+variable "k8s_apiserver_count" {
+  default = 1
+}
+
 variable "k8s_apiserver_insecure_port" {
-  default = 7000
+  default = 8080
 }
 
 variable "k8s_apiserver_secure_port" {
   default = 6443
 }
 
-variable "k8s_service_cluster_ip_range" {
-  default = "10.32.0.0/24"
+variable "k8s_apiserver_encryption_key" {
+  description = "Encryption key used in the API server's encryption config"
+}
+
+variable "k8s_apiserver_encryption_config_file" {
+  default = "/opt/k8s/encryption-config.yaml"
+}
+
+variable "tls_cacert_file" {
+  default = "cacert.pem"
+}
+
+variable "tls_cakey_file" {
+  default = "cakey.pem"
+}
+
+variable "tls_key_file" {
+  default = "key.pem"
+}
+
+variable "tls_cert_file" {
+  default = "cert.pem"
+}
+
+variable "tls_cacert_subject_common_name" {
+  description = "The self-generated CA cert subject common name used to sign all cluster certs. The cluster certs are used to secure and validate inter-cluster requests. The subject common name of this CA cert must be different from the subject common name for the Kubernetes' certificates. Otherwise, Kubernetes will fail, complaining that it's been assigned a self-signed certificate."
+}
+
+variable "tls_cacert_subject_organization" {
+  description = "The self-generated CA cert subject organization name."
+}
+
+variable "tls_etcd_cert_subject_common_name" {
+  description = "The etcd TLS cert subject organization name."
+  default = "system:etcd"
+}
+
+variable "tls_etcd_cert_subject_organization" {
+  description = "The etcd TLS cert subject organization name."
+  default = "system:etcd"
+}
+
+variable "tls_kube_apiserver_cert_subject_common_name" {
+  description = "The kubernetes API Server TLS cert subject organization name."
+  default = "kubernetes"
+}
+
+variable "tls_kube_apiserver_cert_subject_organization" {
+  description = "The kubernetes API Server TLS cert subject organization name."
+  default = "kubernetes"
+}
+
+variable "tls_kube_proxy_cert_subject_common_name" {
+  description = "The kube-proxy TLS cert subject organization name."
+  default = "system:kube-proxy"
+}
+
+variable "tls_kube_proxy_cert_subject_organization" {
+  description = "The kube-proxy TLS cert subject organization name."
+  default = "system:node-proxier"
+}
+
+variable "tls_workers_cert_subject_common_name" {
+  description = "The workers' TLS cert subject organization name."
+  default = "system:node"
+}
+
+variable "tls_workers_cert_subject_organization" {
+  description = "The workers' TLS cert subject organization name."
+  default = "system:nodes"
+}
+
+variable "tls_client_cert_subject_common_name" {
+  description = "The client's TLS cert subject common name. Kubernetes uses this as the user name for the request. Refer http://kubernetes.io/docs/admin/authentication/#x509-client-certs"
+  default = "admin"
+}
+
+variable "tls_client_cert_subject_organization" {
+  description = "The client's TLS cert subject organization name. As of Kubernetes 1.4, Kubernetes uses this as the user's group. Refer http://kubernetes.io/docs/admin/authentication/#x509-client-certs"
+  default = "system:masters"
+}
+
+variable "tls_cert_subject_organizational_unit" {
+  description = "The Kubernetes and etcd clusters' TLS cert subject organizational unit."
+}
+
+variable "tls_cert_subject_street_address" {
+  description = "The Kubernetes and etcd clusters' TLS cert subject street address."
+}
+
+variable "tls_cert_subject_locality" {
+  description = "The Kubernetes and etcd clusters' TLS cert subject locality."
+}
+
+variable "tls_cert_subject_province" {
+  description = "The Kubernetes and etcd clusters' TLS cert subject postal code."
+}
+
+variable "tls_cert_subject_postal_code" {
+  description = "The Kubernetes and etcd clusters' TLS cert subject postal code."
+}
+
+variable "tls_cert_subject_country" {
+  description = "The Kubernetes and etcd clusters' TLS cert subject 2-letter country code."
+}
+
+variable "tls_cert_validity_period_hours" {
+  description = "The validity period in hours of the Kubernetes and etcd clusters' TLS cert."
+}
+
+variable "tls_cert_early_renewal_hours" {
+  description = "The early renewal period in hours of the Kubernetes and etcd clusters' TLS cert. Set this variable to a time period that is earlier than the cert validity to force Terraform to generate a new cert before the existing one expires. "
 }
 
 variable "k8s_home" {
   default = "/opt/k8s"
-}
-
-variable "k8s_apps_home" {
-  default = "/opt/k8s/apps"
 }
 
 variable "k8s_bin_home" {
@@ -292,79 +250,14 @@ variable "k8s_lib_home" {
   default = "/opt/k8s/lib"
 }
 
-variable "k8s_kubeconfig_file" {
-  default = "/opt/k8s/lib/kubeconfig"
+variable "k8s_lib_kubelet_home" {
+  default = "/opt/k8s/lib/kubelet"
 }
 
-variable "k8s_unit_files_home" {
-  default = "/opt/k8s/unit-files"
+variable "k8s_lib_kube_proxy_home" {
+  default = "/opt/k8s/lib/kube-proxy"
 }
 
-variable "k8s_auth_home" {
-  default = "/opt/k8s/auth"
-}
-
-variable "k8s_auth_policy_file" {
-  default = "/opt/k8s/auth/authorization-policy.json"
-}
-
-variable "k8s_basic_auth_file" {
-  default = "/opt/k8s/auth/basic"
-}
-
-variable "k8s_token_auth_file" {
-  default = "/opt/k8s/auth/token.csv"
-}
-
-variable "k8s_worker_count" {
-  default = 2
-}
-
-variable "k8s_dns_home" {
-	default = "/opt/k8s/dns"
-}
-
-variable "k8s_dns_service_file" {
-  default = "/opt/k8s/dns/service.yml"
-}
-
-variable "k8s_dns_deployment_file" {
-  default = "/opt/k8s/dns/deployment.yml"
-}
-
-variable "skydns_version" {
-  default = "2.5.3a"
-}
-
-variable "skydns_home" {
-  default = "/opt/skydns"
-}
-
-variable "skydns_bin_home" {
-  default = "/opt/skydns/bin"
-}
-
-variable "skydns_unit_files_home" {
-  default = "/opt/skydns/unit-files"
-}
-
-variable "skydns_tls_home" {
-  default = "/opt/skydns/tls"
-}
-
-variable "skydns_ca_file" {
-  default = "/opt/skydns/tls/ca.pem"
-}
-
-variable "skydns_cert_file" {
-  default = "/opt/skydns/tls/cert.pem"
-}
-
-variable "skydns_key_file" {
-  default = "/opt/skydns/tls/key.pem"
-}
-
-variable "skydns_domain_key_path" {
-  default = "/skydns/local/coreos"
-  description = "The path to all the DNS record keys in etcd. This is the concentation of the pat prefix and the reverse of the droplet_domain. Refer to the https://github.com/skynetservices/skydns docs for more information."
+variable "k8s_workers_count" {
+  default = 3
 }

@@ -2,3 +2,5 @@
 *.tfvars
 .tls
 *.swp
+.terraform
+.kubeconfig

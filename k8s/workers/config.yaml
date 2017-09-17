@@ -1,0 +1,76 @@
+systemd:
+  units:
+    - name: kubelet.service
+      enable: true
+      contents: |
+        [Unit]
+        Description=Kubernetes Kubelet
+        Documentation=https://github.com/GoogleCloudPlatform/kubernetes
+        Requires=coreos-metadata.service
+        After=coreos-metadata.service
+        Requires=docker.service
+        After=docker.service
+
+        [Service]
+        EnvironmentFile=/run/metadata/coreos
+        ExecStart=/opt/k8s/bin/kubelet \
+          --allow-privileged=true \
+          --address=$${COREOS_DIGITALOCEAN_IPV4_PRIVATE_0} \
+          --cluster-dns=${cluster_dns_ip} \
+          --cluster-domain=${cluster_domain} \
+          --container-runtime=docker \
+          --docker-endpoint=unix://var/run/docker.sock \
+          --enable-custom-metrics \
+          --image-pull-progress-deadline=2m \
+          --kubeconfig=${kubelet_kubeconfig} \
+          --register-node=true \
+          --require-kubeconfig=true \
+          --root-dir=${lib_home} \
+          --runtime-request-timeout=10m \
+          --tls-cert-file=${cert_file} \
+          --tls-private-key-file=${key_file} \
+          --v=2
+        Restart=on-failure
+        RestartSec=5
+
+        [Install]
+        WantedBy=multi-user.target
+
+    - name: kube-proxy.service
+      enable: true
+      contents: |
+        [Unit]
+        Description=Kubernetes Kube Proxy
+        Documentation=https://github.com/GoogleCloudPlatform/kubernetes
+
+        [Service]
+        ExecStart=/opt/k8s/bin/kube-proxy \
+          --config=${kube_proxy_config_file}
+        Restart=on-failure
+        RestartSec=5
+
+        [Install]
+        WantedBy=multi-user.target
+
+files:
+  - path: ${kube_proxy_config_file}
+    filesystem: root
+    mode: 0644
+    user:
+      id: 500
+    group:
+      id: 500
+    contents:
+      inline: ${kube_proxy_config}
+
+update:
+  group: ${update_channel}
+
+locksmith:
+  reboot_strategy: etcd-lock
+  window_start: ${maintenance_window_start}
+  window_length: ${maintenance_window_length}
+  etcd_endpoints: https://{PRIVATE_IPV4}:${etcd_client_port}
+  etcd_cafile: ${cacert_file}
+  etcd_certfile: ${cert_file}
+  etcd_keyfile: ${key_file}

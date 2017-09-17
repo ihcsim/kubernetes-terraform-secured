@@ -1,7 +1,3 @@
-output "etcd" {
-  value = "${join(",", formatlist("https://%s:%s", digitalocean_droplet.etcd.*.ipv4_address, var.etcd_client_port))}"
-}
-
 resource "digitalocean_droplet" "etcd" {
   count = "${var.etcd_count}"
   name = "${format("etcd-%02d", count.index)}"
@@ -10,16 +6,17 @@ resource "digitalocean_droplet" "etcd" {
   size = "1GB"
   private_networking = "true"
   ssh_keys = ["${var.droplet_private_key_id}"]
-  user_data = "${data.template_file.etcd_cloud_config.rendered}"
+  user_data = "${element(data.ct_config.etcd.*.rendered, count.index)}"
+  volume_ids = ["${element(digitalocean_volume.etcd_data.*.id, count.index)}"]
 }
 
 resource "null_resource" "etcd_tls" {
+  count = "${var.etcd_count}"
+
   triggers {
-    etcd_droplets_ids = "${join(",", digitalocean_droplet.etcd.*.id)}"
-    cert = "${tls_locally_signed_cert.etcd_cert.cert_pem}"
+    droplets = "${join(",", digitalocean_droplet.etcd.*.id)}"
   }
 
-  count = "${var.etcd_count}"
   connection {
     user = "${var.droplet_ssh_user}"
     private_key = "${file(var.droplet_private_key_file)}"
@@ -28,129 +25,107 @@ resource "null_resource" "etcd_tls" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo mkdir -p ${var.etcd_tls_home}",
-      "sudo chown core:core ${var.etcd_tls_home}",
-      "sudo cat <<EOF > ${var.etcd_cert_file}
-${tls_locally_signed_cert.etcd_cert.cert_pem}
-EOF",
-      "sudo cat <<EOF > ${var.etcd_key_file}
-${tls_private_key.etcd_key.private_key_pem}
-EOF",
-      "sudo cat <<EOF > ${var.etcd_trusted_ca_file}
-${tls_self_signed_cert.ca_cert.cert_pem}
-EOF",
-      "sudo chmod 0644 ${var.etcd_tls_home}/*",
-    ]
-  }
-}
-
-resource "null_resource" "etcd_dns" {
-  depends_on = ["digitalocean_droplet.skydns"]
-
-  triggers {
-    etcd_droplets = "${join(",", digitalocean_droplet.etcd.*.id)}"
-    skydns_droplet = "${digitalocean_droplet.skydns.id}"
-  }
-
-  count = "${var.etcd_count}"
-  connection {
-    user = "${var.droplet_ssh_user}"
-    private_key = "${file(var.droplet_private_key_file)}"
-    host = "${element(digitalocean_droplet.etcd.*.ipv4_address, count.index)}"
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "sudo mkdir -p ${var.droplet_resolv_home}",
-      "sudo chown -R core:core ${var.droplet_resolv_home}",
+      "sudo mkdir -p ${var.droplet_tls_certs_home}/${var.droplet_domain}",
+      "sudo chown -R ${var.droplet_ssh_user} ${var.droplet_tls_certs_home}/${var.droplet_domain}"
     ]
   }
 
   provisioner "file" {
-    content = "${data.template_file.etcd_resolv_conf.rendered}"
-    destination = "${var.droplet_resolv_file}"
+    content = "${element(tls_locally_signed_cert.etcd_cert.*.cert_pem, count.index)}"
+    destination = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cert_file}"
   }
 
-  provisioner "remote-exec" {
-    inline = [
-      "sudo systemctl restart systemd-resolved",
-      "etcdctl --endpoints https://${element(digitalocean_droplet.etcd.*.ipv4_address, count.index)}:${var.etcd_client_port} --ca-file ${var.etcd_trusted_ca_file} --key-file ${var.etcd_key_file} --cert-file ${var.etcd_cert_file} set ${var.skydns_domain_key_path}/${element(digitalocean_droplet.etcd.*.name, count.index)} '{\"host\":\"${element(digitalocean_droplet.etcd.*.ipv4_address, count.index)}\"}'",
-    ]
+  provisioner "file" {
+    content = "${element(tls_private_key.etcd_key.*.private_key_pem, count.index)}"
+    destination = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_key_file}"
   }
 }
 
-data "template_file" "etcd_cloud_config" {
-  template = "${file("${path.module}/etcd/cloud-config")}"
+resource "digitalocean_volume" "etcd_data" {
+  count = "${var.etcd_count}"
+
+  name = "${format("etcd-%02d-data", count.index)}"
+  region = "${var.droplet_region}"
+  size = 10
+}
+
+data "ct_config" "etcd" {
+  count = "${var.etcd_count}"
+
+  platform = "digitalocean"
+  content = "${element(data.template_file.etcd_config.*.rendered, count.index)}"
+}
+
+data "template_file" "etcd_config" {
+  count = "${var.etcd_count}"
+  template = "${file("${path.module}/etcd/config.yaml")}"
 
   vars {
-    client_cert_auth = "true"
+    etcd_version = "${var.etcd_version}"
     discovery_url = "${var.etcd_discovery_url}"
-    domain = "${var.droplet_domain}"
+    data_dir = "${var.etcd_data_dir}"
+
     etcd_client_port = "${var.etcd_client_port}"
     etcd_peer_port = "${var.etcd_peer_port}"
     etcd_heartbeat_interval = "${var.etcd_heartbeat_interval}"
     etcd_election_timeout = "${var.etcd_election_timeout}"
-    etcd_tls_home = "${var.etcd_tls_home}"
-    fleet_agent_ttl = "${var.fleet_agent_ttl}"
-    fleet_etcd_request_timeout = "${var.fleet_etcd_request_timeout}"
-    cert_file = "${var.etcd_cert_file}"
-    key_file = "${var.etcd_key_file}"
-    peer_client_cert_auth = "true"
-    trusted_ca_file = "${var.etcd_trusted_ca_file}"
-  }
-}
 
-data "template_file" "etcd_resolv_conf" {
-  template = "${file("${path.module}/etcd/resolved.conf")}"
+    cacert = "${jsonencode(tls_self_signed_cert.cacert.cert_pem)}"
+    cacert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cacert_file}"
+    cert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cert_file}"
+    key_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_key_file}"
 
-  vars {
-    dns_server = "${digitalocean_droplet.skydns.ipv4_address_private}"
-    domain = "${var.droplet_domain}"
+    device_path = "/dev/disk/by-id/scsi-0DO_Volume_${format("etcd-%02d-data", count.index)}"
+
+    maintenance_window_start = "${var.droplet_maintenance_window_start}"
+    maintenance_window_length = "${var.droplet_maintenance_window_length}"
+    update_channel = "${var.droplet_update_channel}"
   }
 }
 
 resource "tls_private_key" "etcd_key" {
+  count = "${var.etcd_count}"
+
   algorithm = "RSA"
-  rsa_bits = 2048
+  rsa_bits = 4096
 }
 
 resource "tls_cert_request" "etcd_csr" {
-  key_algorithm = "${tls_private_key.etcd_key.algorithm}"
-  private_key_pem = "${tls_private_key.etcd_key.private_key_pem}"
-  subject {
-    common_name = "${var.tls_cluster_cert_subject_common_name}"
-    organization = "${var.tls_cluster_cert_subject_organization}"
-    organizational_unit = "${var.tls_cluster_cert_subject_organizational_unit}"
-    street_address = ["${var.tls_cluster_cert_subject_street_address}"]
-    locality = "${var.tls_cluster_cert_subject_locality}"
-    province = "${var.tls_cluster_cert_subject_province}"
-    country = "${var.tls_cluster_cert_subject_country}"
-    postal_code = "${var.tls_cluster_cert_subject_postal_code}"
-    serial_number = "${var.tls_cluster_cert_subject_serial_number}"
-  }
+  count = "${var.etcd_count}"
+
+  key_algorithm = "${element(tls_private_key.etcd_key.*.algorithm, count.index)}"
+  private_key_pem = "${element(tls_private_key.etcd_key.*.private_key_pem, count.index)}"
 
   ip_addresses = [
-    "${digitalocean_droplet.etcd.*.ipv4_address}",
-    "${digitalocean_droplet.etcd.*.ipv4_address_private}"
+    "${element(digitalocean_droplet.etcd.*.ipv4_address_private, count.index)}"
   ]
 
-  dns_names = [
-    "${digitalocean_droplet.etcd.*.name}",
-    "${formatlist("%s.%s", digitalocean_droplet.etcd.*.name, var.droplet_domain)}"
-  ]
+  subject = {
+    common_name = "${var.tls_etcd_cert_subject_common_name}"
+    organization = "${var.tls_etcd_cert_subject_organization}"
+    organizational_unit = "${var.tls_cert_subject_organizational_unit}"
+    street_address = ["${var.tls_cert_subject_street_address}"]
+    locality = "${var.tls_cert_subject_locality}"
+    province = "${var.tls_cert_subject_province}"
+    country = "${var.tls_cert_subject_country}"
+    postal_code = "${var.tls_cert_subject_postal_code}"
+  }
 }
 
 resource "tls_locally_signed_cert" "etcd_cert" {
-  cert_request_pem = "${tls_cert_request.etcd_csr.cert_request_pem}"
-  ca_key_algorithm = "${tls_private_key.ca_key.algorithm}"
-  ca_private_key_pem = "${tls_private_key.ca_key.private_key_pem}"
-  ca_cert_pem = "${tls_self_signed_cert.ca_cert.cert_pem}"
-  validity_period_hours = "${var.tls_cluster_cert_validity_period_hours}"
+  count = "${var.etcd_count}"
+
+  cert_request_pem = "${element(tls_cert_request.etcd_csr.*.cert_request_pem, count.index)}"
+  ca_private_key_pem = "${tls_private_key.cakey.private_key_pem}"
+  ca_key_algorithm = "${tls_private_key.cakey.algorithm}"
+  ca_cert_pem = "${tls_self_signed_cert.cacert.cert_pem}"
+
+  validity_period_hours = "${var.tls_cert_validity_period_hours}"
+  early_renewal_hours = "${var.tls_cert_early_renewal_hours}"
+
   allowed_uses = [
     "key_encipherment",
     "server_auth",
-    "client_auth",
-    "cert_signing"
+    "client_auth"
   ]
-  early_renewal_hours = "${var.tls_cluster_cert_early_renewal_hours}"
 }

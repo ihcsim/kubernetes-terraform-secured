@@ -1,0 +1,80 @@
+etcd:
+  version: ${etcd_version}
+  discovery: ${discovery_url}
+  name: "{HOSTNAME}"
+
+  data_dir: ${data_dir}
+
+  advertise_client_urls: https://{PRIVATE_IPV4}:${etcd_client_port}
+  initial_advertise_peer_urls: https://{PRIVATE_IPV4}:${etcd_peer_port}
+  listen_client_urls: https://0.0.0.0:${etcd_client_port}
+  listen_peer_urls: https://{PRIVATE_IPV4}:${etcd_peer_port}
+
+  peer_client_cert_auth: true
+  peer_trusted_ca_file: ${cacert_file}
+  peer_cert_file: ${cert_file}
+  peer_key_file: ${key_file}
+
+  client_cert_auth: true
+  trusted_ca_file: ${cacert_file}
+  cert_file: ${cert_file}
+  key_file: ${key_file}
+
+systemd:
+  units:
+    - name: var-lib-etcd.mount
+      enable: true
+      contents: |
+        [Unit]
+        Description=etcd data folder
+        Before=etcd-member.service
+
+        [Mount]
+        What=${device_path}
+        Where=${data_dir}
+        Type=ext4
+
+        [Install]
+        RequiredBy=etcd-member.service
+        WantedBy=multi-user.target
+
+storage:
+  filesystems:
+    - mount:
+        device: ${device_path}
+        format: ext4
+        create:
+          force: true
+
+  files:
+    - path: ${cacert_file}
+      filesystem: root
+      mode: 0644
+      contents:
+        inline: ${cacert}
+      user:
+        id: 500
+      group:
+        id: 500
+    - path: /etc/profile.env
+      filesystem: root
+      mode: 0644
+      contents:
+        inline: |
+          source /run/metadata/coreos
+          export ETCDCTL_CA_FILE=${cacert_file}
+          export ETCDCTL_CERT_FILE=${cert_file}
+          export ETCDCTL_KEY_FILE=${key_file}
+          export ETCDCTL_ENDPOINTS=https://$${COREOS_DIGITALOCEAN_IPV4_PRIVATE_0}:${etcd_client_port}
+
+update:
+  group: ${update_channel}
+
+locksmith:
+  reboot_strategy: etcd-lock
+  window_start: ${maintenance_window_start}
+  window_length: ${maintenance_window_length}
+  etcd_endpoints: https://{PRIVATE_IPV4}:${etcd_client_port}
+  etcd_cafile: ${cacert_file}
+  etcd_certfile: ${cert_file}
+  etcd_keyfile: ${key_file}
