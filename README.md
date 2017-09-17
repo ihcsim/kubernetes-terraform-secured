@@ -6,6 +6,7 @@ This project uses [Terraform](https://www.terraform.io/) to provision [Kubernete
 
 ## Table of Content
 
+* [Prerequisites](#prerequisites)
 * [Getting Started](#getting-started)
 * [Cluster Layout](#cluster-layout)
   * [etcd3](#etcd3)
@@ -20,7 +21,7 @@ This project uses [Terraform](https://www.terraform.io/) to provision [Kubernete
 * [Terraform v0.10.0](https://www.terraform.io/downloads.html)
 * [Container Linux Config Transpiler Provider](https://github.com/coreos/terraform-provider-ct)
 * [Go 1.8.3](https://golang.org/dl/)
-8 [doctl 1.7.0](https://github.com/digitalocean/doctl)
+* [doctl 1.7.0](https://github.com/digitalocean/doctl)
 
 ## Getting Started
 To get started, clone this repository:
@@ -33,11 +34,12 @@ Initialize the project:
 $ terraform init
 ```
 
-The above command will fail with errors complaining about the missing Config Transpiler provider. Since at the time of this writing, the Linux Container's Config Transpiler provider isn't included in the official Terraform Providers repository, it will need to be copied into your local `kubernetes-terraform-secured/.terraform` folder. Install the Config Transpiler provider:
+The above command will fail with errors complaining about the missing Config Transpiler provider. Since at the time of this writing, the Linux Container's Config Transpiler provider isn't included in the official [Terraform Providers repository](https://github.com/terraform-providers), you must manually copy it into your local `kubernetes-terraform-secured/.terraform` folder.
+
+Use the following commands to install the Config Transpiler provider:
 ```sh
-$ cd kuberntes-terraform-secured
 $ go get -u github.com/coreos/terraform-provider-ct
-$ cp $GOPATH/bin/terraform-provider-ct .terraform/plugins/<os_arch>/
+$ cp $GOPATH/bin/terraform-provider-ct kuberntes-terraform-secured/.terraform/plugins/<os_arch>/
 ```
 
 Re-initialize the project:
@@ -55,9 +57,9 @@ var.etcd_discovery_url
 
   Enter a value
 ```
-Note that on order to initialize the etcd cluster, the `etcd_discovery_url` variable needs to be assigned a value obtained from https://discovery.etcd.io/new?size=N, where `N` is the number of etcd nodes in the cluster.
+Note that in order to initialize the etcd cluster, the `etcd_discovery_url` variable needs to be assigned a value obtained from https://discovery.etcd.io/new?size=N, where `N` is the number of etcd nodes in the cluster.
 
-Once Terraform successfully completed the provisioning operation, the `kubeconfig` data of the new Kubernetes cluster will be output. Copy its content into your `kubeconfig` file, and then verify that the cluster is accessible:
+Once Terraform completes the provisioning operation, the `kubeconfig` data of the new Kubernetes cluster will be output. Copy its content into your `kubeconfig` file, and then verify that the cluster is healthy:
 ```sh
 $ kubectl --kubeconfig=<your_kubeconfig_file> get componentstatuses
 NAME                 STATUS    MESSAGE              ERROR
@@ -77,9 +79,9 @@ k8s-worker-02   Ready     48s       v1.7.0
 ## Cluster Layout
 By default, this project provisions a cluster that is comprised of:
 
-* 3 etcd v3 nodes
-* 1 Kubernetes Master node and
-* 3 Kubernetes Workers nodes
+* 3 etcd v3 droplets
+* 1 Kubernetes Master droplet and
+* 3 Kubernetes Workers droplets
 
 All droplets are initialized using CoreOS' [Container Linux Config](https://coreos.com/os/docs/latest/provisioning.html). These configurations are defined in the `config.yaml` files found in the `etcd/` and `k8s/` folders. They are interpolated using the Terraform's Config Transpiler provider.
 
@@ -88,11 +90,11 @@ All droplets are initialized using CoreOS' [Container Linux Config](https://core
 ### etcd3
 The number of etcd3 instances to be provisioned in the cluster can be altered using the `etcd_count` Terraform variable.
 
-The etcd3 cluster is only accessible by nodes which are part of the cluster. All peer-to-peer and client-to-server communication is encrypted and authenticated by using self-signed CA, private key and TLS certificate.
+The etcd3 cluster is only accessible by nodes which are part of the cluster. All peer-to-peer and client-to-server communications are encrypted and authenticated using the self-signed CA, private key and TLS certificate.
 
-Every etcd instance's `data-dir` at `/var/lib/etcd` is mounted as a volume to a [DigitalOcean block storage](https://www.digitalocean.com/products/storage/).
+Every etcd instance's data directory at `/var/lib/etcd` is mounted as a volume to a [DigitalOcean block storage](https://www.digitalocean.com/products/storage/).
 
-On every droplet, the `etcdctl` v2 client is configured to target the etcd cluster.
+For testing purposes, the `etcdctl` v2 client on every etcd droplet is configured to target the etcd cluster. For example,
 ```sh
 $ doctl compute ssh etcd-00
 Last login: <redacted>
@@ -113,7 +115,7 @@ The following componenets are deployed in the Kubernetes cluster:
 
 The number of Kubernetes workers can be altered using the `k8s_workers_count` Terraform variable.
 
-All communication between the API Server, etcd, Kubelet and clients such as Kubectl are secured with TLS certs. The certificate and private key are declared in the `k8s-master.tf` and `k8s-workers` files. The CSR used to generate the certificate are also found in the same files. Since the Controller Manager and Scheduler resides on the same host as the API Server, they communicate with the API Server via its insecure network interface.
+All communications between the API Server, etcd, Kubelet and clients such as Kubectl are secured with TLS certs. The certificates and private keys are declared in the `k8s-master.tf` and `k8s-workers` files. The CSRs used to generate the certificate are also found in the same files. Since the Controller Manager and Scheduler resides on the same host as the API Server, they can communicate with the API Server via its insecure network interface.
 
 The API Server is started with the following admission controllers:
 
