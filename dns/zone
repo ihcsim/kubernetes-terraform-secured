@@ -1,0 +1,10 @@
+$$ORIGIN ${domain}.
+$$TTL 1h
+
+@ IN SOA ns.${domain}. dev.${domain}. (
+  123456789        ; serial number of this zone file
+  1d               ; slave refresh
+  2h               ; slave retry time in case of a problem
+  4w               ; slave expiration time
+  1h               ; minimum caching time in case of failed lookups
+)

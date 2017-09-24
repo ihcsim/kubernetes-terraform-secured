@@ -66,6 +66,22 @@ storage:
           export ETCDCTL_CERT_FILE=${cert_file}
           export ETCDCTL_KEY_FILE=${key_file}
           export ETCDCTL_ENDPOINTS=https://$${COREOS_DIGITALOCEAN_IPV4_PRIVATE_0}:${etcd_client_port}
+    - path: /etc/systemd/resolved.conf.d/00-droplet.conf
+      filesystem: root
+      mode: 0644
+      user:
+        id: 0
+      group:
+        id: 0
+      contents:
+        inline: |
+          [Resolve]
+          DNS=${dns_server}
+          Domains=${domain}
+          LLMNR=yes
+          DNSSEC=allow-downgrade
+          Cache=yes
+          DNSStubListener=udp
 
 update:
   group: ${update_channel}
