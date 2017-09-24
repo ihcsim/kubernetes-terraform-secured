@@ -110,6 +110,9 @@ data "template_file" "k8s_workers_config" {
 
     etcd_client_port = "${var.etcd_client_port}"
 
+    dns_server = "${digitalocean_droplet.coredns.ipv4_address_private}"
+    domain = "${var.droplet_domain}"
+
     cacert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cacert_file}"
     cert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/kubelet/${var.tls_cert_file}"
     key_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/kubelet/${var.tls_key_file}"

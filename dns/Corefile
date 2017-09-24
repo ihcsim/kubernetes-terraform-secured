@@ -1,0 +1,8 @@
+${domain} {
+  file /opt/coredns/zones/${domain}
+  cache
+  health
+  prometheus
+  errors stdout
+  log stdout
+}

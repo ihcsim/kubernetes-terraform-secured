@@ -1,0 +1,44 @@
+systemd:
+  units:
+    - name: coredns.service
+      enable: true
+      contents: |
+        [Unit]
+        Description=CoreDNS
+        Documentation=https://coredns.io/tags/documentation/
+        Requires=docker.service
+        After=docker.service
+
+        [Service]
+        ExecStart=/usr/bin/docker run --rm \
+          --name coredns \
+          -p 53:53/udp \
+          -v /opt/coredns/Corefile:/opt/coredns/Corefile \
+          -v /opt/coredns/zones/${domain}:/opt/coredns/zones/${domain} \
+          coredns/coredns:${tag} \
+          -conf /opt/coredns/Corefile
+        ExecStop=/usr/bin/docker stop coredns
+        Restart=on-failure
+        RestartSec=5
+
+        [Install]
+        WantedBy=multi-user.target
+
+storage:
+  files:
+    - path: /etc/systemd/resolved.conf.d/00-droplet.conf
+      filesystem: root
+      mode: 0644
+      user:
+        id: 0
+      group:
+        id: 0
+      contents:
+        inline: |
+          [Resolve]
+          DNS=${dns_server}
+          Domains=${domain}
+          LLMNR=yes
+          DNSSEC=allow-downgrade
+          Cache=yes
+          DNSStubListener=udp

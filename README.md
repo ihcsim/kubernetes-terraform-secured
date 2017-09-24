@@ -85,6 +85,8 @@ By default, this project provisions a cluster that is comprised of:
 
 All droplets are initialized using CoreOS' [Container Linux Config](https://coreos.com/os/docs/latest/provisioning.html). These configurations are defined in the `config.yaml` files found in the `etcd/` and `k8s/` folders. They are interpolated using the Terraform's Config Transpiler provider.
 
+[CoreDNS](https://coredns.io/tags/documentation/) is used to provide droplet-level hostname resolution.
+
 **Note that this setup uses the Terraform [TLS Provider](https://www.terraform.io/docs/providers/tls/index.html) to generate RSA private keys, CSR and certificates for development purposes only. The resources generated will be saved in the Terraform state file as plain text. Make sure the Terraform state file is stored securely.**
 
 ### etcd3
@@ -152,5 +154,6 @@ See the [LICENSE](LICENSE) file for the full license text.
 * [Kubernetes The Hard Way](https://github.com/kelseyhightower/kubernetes-the-hard-way)
 * [Running etcd on Container Linux](https://coreos.com/etcd/docs/latest/getting-started-with-etcd.html)
 * [Container Linux Config Spec](https://coreos.com/os/docs/1506.0.0/configuration.html)
+* [CoreDNS](https://coredns.io/tags/documentation/)
 * [How To Install And Configure Kubernetes On Top Of A CoreOS Cluster](https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-kubernetes-on-top-of-a-coreos-cluster)
-* [CoreOS + Kubernetes Step By Step](https://coreos.com/kubernetes/docs/latest/getting-started.html).
+* [CoreOS + Kubernetes Step By Step](https://coreos.com/kubernetes/docs/latest/getting-started.html)

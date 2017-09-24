@@ -8,6 +8,10 @@ resource "digitalocean_droplet" "etcd" {
   ssh_keys = ["${var.droplet_private_key_id}"]
   user_data = "${element(data.ct_config.etcd.*.rendered, count.index)}"
   volume_ids = ["${element(digitalocean_volume.etcd_data.*.id, count.index)}"]
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "null_resource" "etcd_tls" {
@@ -69,6 +73,9 @@ data "template_file" "etcd_config" {
     etcd_peer_port = "${var.etcd_peer_port}"
     etcd_heartbeat_interval = "${var.etcd_heartbeat_interval}"
     etcd_election_timeout = "${var.etcd_election_timeout}"
+
+    domain = "${var.droplet_domain}"
+    dns_server = "${digitalocean_droplet.coredns.ipv4_address_private}"
 
     cacert = "${jsonencode(tls_self_signed_cert.cacert.cert_pem)}"
     cacert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cacert_file}"

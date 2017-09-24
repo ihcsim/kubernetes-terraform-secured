@@ -19,20 +19,12 @@ variable "droplet_region" {
 }
 
 variable "droplet_domain" {
-  default = "default.cluster"
+  default = "droplet.cluster"
   description = "All droplets will be assigned FQDN in the form of <name>.<region>.<droplet_domain>."
 }
 
 variable "droplet_tls_certs_home" {
   default = "/etc/ssl/certs"
-}
-
-variable "droplet_resolv_home" {
-  default = "/etc/systemd/resolved.conf.d/"
-}
-
-variable "droplet_resolv_file" {
-  default = "/etc/systemd/resolved.conf.d/droplet.conf"
 }
 
 variable "droplet_maintenance_window_start" {
@@ -48,8 +40,12 @@ variable "droplet_update_channel" {
 }
 
 variable "coreos_image" {
-  default = "27616485"
-  description = "Image ID of CoreOS 1465.6.0."
+  default = "27983391"
+  description = "Image ID of CoreOS 1465.8.0."
+}
+
+variable "coredns_version" {
+  default = "011"
 }
 
 variable "etcd_discovery_url" {

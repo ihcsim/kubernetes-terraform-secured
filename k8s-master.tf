@@ -99,6 +99,9 @@ data "template_file" "k8s_master_config" {
     etcd_endpoints = "${join(",", formatlist("https://%s:%s", digitalocean_droplet.etcd.*.ipv4_address_private, var.etcd_client_port))}"
     etcd_client_port = "${var.etcd_client_port}"
 
+    dns_server = "${digitalocean_droplet.coredns.ipv4_address_private}"
+    domain = "${var.droplet_domain}"
+
     cacert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cacert_file}"
     cakey_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cakey_file}"
     cert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cert_file}"

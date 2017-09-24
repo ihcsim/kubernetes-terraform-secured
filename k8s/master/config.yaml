@@ -109,6 +109,25 @@ systemd:
         [Install]
         WantedBy=multi-user.target
 
+storage:
+  files:
+    - path: /etc/systemd/resolved.conf.d/00-droplet.conf
+      filesystem: root
+      mode: 0644
+      user:
+        id: 0
+      group:
+        id: 0
+      contents:
+        inline: |
+          [Resolve]
+          DNS=${dns_server}
+          Domains=${domain}
+          LLMNR=yes
+          DNSSEC=allow-downgrade
+          Cache=yes
+          DNSStubListener=udp
+
 update:
   group: ${update_channel}
 
