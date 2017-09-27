@@ -160,6 +160,11 @@ resource "tls_cert_request" "kube_apiserver" {
     "${element(digitalocean_droplet.k8s_masters.*.ipv4_address, count.index)}"
   ]
 
+  dns_names = [
+    "${element(digitalocean_droplet.k8s_masters.*.name, count.index)}",
+    "${element(digitalocean_droplet.k8s_masters.*.name, count.index)}.${var.droplet_domain}"
+  ]
+
   subject {
     common_name = "${var.tls_kube_apiserver_cert_subject_common_name}"
     organization = "${var.tls_kube_apiserver_cert_subject_organization}"
