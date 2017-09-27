@@ -124,8 +124,10 @@ The API Server is started with the following admission controllers:
 1. NamespaceLifecycle
 1. LimitRanger
 1. ServiceAccount
+1. PersistentVolumeLabel
 1. DefaultStorageClass
 1. ResourceQuota
+1. DefaultTolerationSeconds
 1. NodeRestriction
 
 The Controller Manager uses the CA cert and key declared in `ca.tf` to serve cluster-scoped certificates-issuing requests. Refer to the [Master Node Communication docs](http://kubernetes.io/docs/admin/master-node-communication/#controller-manager-configuration) for details.

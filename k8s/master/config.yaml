@@ -14,7 +14,7 @@ systemd:
         [Service]
         EnvironmentFile=/run/metadata/coreos
         ExecStart=/opt/k8s/bin/kube-apiserver \
-          --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota,NodeRestriction \
+          --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,ResourceQuota,DefaultTolerationSeconds,NodeRestriction \
           --advertise-address=$${COREOS_DIGITALOCEAN_IPV4_PRIVATE_0} \
           --allow-privileged=true \
           --apiserver-count=${apiserver_count} \
