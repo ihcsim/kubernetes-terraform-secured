@@ -34,7 +34,7 @@ Initialize the project:
 $ terraform init
 ```
 
-The above command will fail with errors complaining about the missing Config Transpiler provider. Since at the time of this writing, the Linux Container's Config Transpiler provider isn't included in the official [Terraform Providers repository](https://github.com/terraform-providers), you must manually copy it into your local `kubernetes-terraform-secured/.terraform` folder.
+The above command will fail with errors complaining about the missing [Config Transpiler provider](https://github.com/coreos/terraform-provider-ct). Since at the time of this writing, the Linux Container's Config Transpiler provider isn't included in the official [Terraform Providers repository](https://github.com/terraform-providers), you must manually copy it into your local `kubernetes-terraform-secured/.terraform` folder.
 
 Use the following commands to install the Config Transpiler provider:
 ```sh
@@ -79,7 +79,7 @@ k8s-worker-02   Ready     48s       v1.7.0
 ## Cluster Layout
 By default, this project provisions a cluster that is comprised of:
 
-* 3 etcd v3 droplets
+* 3 etcd3 droplets
 * 1 Kubernetes Master droplet and
 * 3 Kubernetes Workers droplets
 
@@ -90,11 +90,11 @@ All droplets are initialized using CoreOS' [Container Linux Config](https://core
 **Note that this setup uses the Terraform [TLS Provider](https://www.terraform.io/docs/providers/tls/index.html) to generate RSA private keys, CSR and certificates for development purposes only. The resources generated will be saved in the Terraform state file as plain text. Make sure the Terraform state file is stored securely.**
 
 ### etcd3
-The number of etcd3 instances to be provisioned in the cluster can be altered using the `etcd_count` Terraform variable.
+The number of etcd3 instances provisioned in the cluster can be altered using the `etcd_count` Terraform variable.
 
 The etcd3 cluster is only accessible by nodes which are part of the cluster. All peer-to-peer and client-to-server communications are encrypted and authenticated using the self-signed CA, private key and TLS certificate.
 
-Every etcd instance's data directory at `/var/lib/etcd` is mounted as a volume to a [DigitalOcean block storage](https://www.digitalocean.com/products/storage/).
+Every etcd instance's data directory (defaulted to `/var/lib/etcd`) is mounted as a volume to a [DigitalOcean block storage](https://www.digitalocean.com/products/storage/).
 
 For testing purposes, the `etcdctl` v2 client on every etcd droplet is configured to target the etcd cluster. For example,
 ```sh
