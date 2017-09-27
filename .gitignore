@@ -4,3 +4,4 @@
 *.swp
 .terraform
 .kubeconfig
+.cacert.pem

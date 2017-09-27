@@ -4,7 +4,8 @@ droplet_ssh_user = ""
 droplet_private_key_file = ""
 droplet_private_key_id =
 
-k8s_apiserver_encryption_key = "/PDInfnrmQrT+xEJcNyTKE="
+k8s_apiserver_encryption_key = ""
+k8s_apiserver_client_token = ""
 
 tls_cacert_subject_common_name = ""
 tls_cacert_subject_organization = ""

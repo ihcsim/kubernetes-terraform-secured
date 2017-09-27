@@ -39,6 +39,11 @@ resource "digitalocean_droplet" "k8s_masters" {
     content = "${data.template_file.k8s_apiserver_encryption_config.rendered}"
     destination = "${var.k8s_home}/encryption.yaml"
   }
+
+  provisioner "file" {
+    content = "${data.template_file.k8s_apiserver_token_file.rendered}"
+    destination = "/opt/k8s/token.csv"
+  }
 }
 
 resource "null_resource" "k8s_masters_tls" {
@@ -139,6 +144,14 @@ data "template_file" "kubeconfig" {
 
     cluster_name = "${var.k8s_cluster_name}"
     username = "default"
+  }
+}
+
+data "template_file" "k8s_apiserver_token_file" {
+  template = "${file("${path.module}/k8s/master/token.csv")}"
+
+  vars {
+    client_token = "${var.k8s_apiserver_client_token}"
   }
 }
 

@@ -17,6 +17,7 @@ systemd:
           --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,ResourceQuota,DefaultTolerationSeconds,NodeRestriction \
           --advertise-address=$${COREOS_DIGITALOCEAN_IPV4_PRIVATE_0} \
           --allow-privileged=true \
+          --anonymous-auth=false \
           --apiserver-count=${apiserver_count} \
           --audit-log-maxage=30 \
           --audit-log-maxbackup=3 \
@@ -46,6 +47,7 @@ systemd:
           --tls-ca-file=${cacert_file} \
           --tls-cert-file=${cert_file} \
           --tls-private-key-file=${key_file} \
+          --token-auth-file=/opt/k8s/token.csv \
           --v=2
         Restart=on-failure
         RestartSec=5
