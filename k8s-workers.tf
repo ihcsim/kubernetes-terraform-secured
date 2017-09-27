@@ -190,6 +190,11 @@ resource "tls_cert_request" "kubelet" {
   ip_addresses = [
     "${element(digitalocean_droplet.k8s_workers.*.ipv4_address_private, count.index)}"
   ]
+
+  dns_names = [
+    "${element(digitalocean_droplet.k8s_workers.*.name, count.index)}",
+    "${element(digitalocean_droplet.k8s_workers.*.name, count.index)}.${var.droplet_domain}",
+  ]
 }
 
 resource "tls_locally_signed_cert" "kubelet" {
