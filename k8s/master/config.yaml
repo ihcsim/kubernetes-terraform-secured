@@ -17,12 +17,14 @@ systemd:
           --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,ResourceQuota,DefaultTolerationSeconds,NodeRestriction \
           --advertise-address=$${COREOS_DIGITALOCEAN_IPV4_PRIVATE_0} \
           --allow-privileged=true \
+          --anonymous-auth=false \
           --apiserver-count=${apiserver_count} \
           --audit-log-maxage=30 \
           --audit-log-maxbackup=3 \
           --audit-log-maxsize=100 \
           --audit-log-path=/var/log/audit.log \
-          --authorization-mode=Node,RBAC \
+          --authorization-mode=Node,ABAC,RBAC \
+          --authorization-policy-file=/opt/k8s/abac.json \
           --bind-address=0.0.0.0 \
           --client-ca-file=${cacert_file} \
           --enable-swagger-ui=true \
@@ -46,6 +48,7 @@ systemd:
           --tls-ca-file=${cacert_file} \
           --tls-cert-file=${cert_file} \
           --tls-private-key-file=${key_file} \
+          --token-auth-file=/opt/k8s/token.csv \
           --v=2
         Restart=on-failure
         RestartSec=5

@@ -76,6 +76,25 @@ k8s-worker-01   Ready     46s       v1.7.0
 k8s-worker-02   Ready     48s       v1.7.0
 ```
 
+A bearer token which can be included in the `Authorization` header of HTTP requests will also be output. For example,
+```sh
+$ curl --cacert <cacert> https://<k8s_master_public_ip>:6443/version
+Unauthorized
+$ curl --cacert <cacert> -H "Authorization: Bearer <token>" https://<public_ip>:6443/version
+{
+  "major": "1",
+  "minor": "7",
+  "gitVersion": "v1.7.0",
+  "gitCommit": "d3ada0119e776222f11ec7945e6d860061339aad",
+  "gitTreeState": "clean",
+  "buildDate": "2017-06-29T22:55:19Z",
+  "goVersion": "go1.8.3",
+  "compiler": "gc",
+  "platform": "linux/amd64"
+}
+```
+Note that the base64-encoded CA cert can be obtained from the `kubeconfig` output.
+
 ## Cluster Layout
 By default, this project provisions a cluster that is comprised of:
 
@@ -117,8 +136,6 @@ The following componenets are deployed in the Kubernetes cluster:
 
 The number of Kubernetes workers can be altered using the `k8s_workers_count` Terraform variable.
 
-All communications between the API Server, etcd, Kubelet and clients such as Kubectl are secured with TLS certs. The certificates and private keys are declared in the `k8s-master.tf` and `k8s-workers` files. The CSRs used to generate the certificate are also found in the same files. Since the Controller Manager and Scheduler resides on the same host as the API Server, they can communicate with the API Server via its insecure network interface.
-
 The API Server is started with the following admission controllers:
 
 1. NamespaceLifecycle
@@ -129,6 +146,12 @@ The API Server is started with the following admission controllers:
 1. ResourceQuota
 1. DefaultTolerationSeconds
 1. NodeRestriction
+
+All API requests to the API Server are authenticated using X.509 TLS certificates and static bearer tokens. (To disable [anonymous requests](https://kubernetes.io/docs/admin/authentication/#anonymous-requests), the API Server is started with the `--anonymous-auth=false` flag.) Refer to the Kubernetes [_Authentication_](https://kubernetes.io/docs/admin/authentication/) documentation for more information on these authentication strategies.
+
+Use the `k8s/master/token.csv` file to add more bearer token. The access rights of the corresponding users are specified in the `k8s/master/abac.json` file.
+
+All communications between the API Server, etcd, Kubelet and clients such as Kubectl are secured with TLS certs. The certificates and private keys are declared in the `k8s-master.tf` and `k8s-workers` files. The CSRs used to generate the certificate are also found in the same files. Since the Controller Manager and Scheduler resides on the same host as the API Server, they can communicate with the API Server via its insecure network interface.
 
 The Controller Manager uses the CA cert and key declared in `ca.tf` to serve cluster-scoped certificates-issuing requests. Refer to the [Master Node Communication docs](http://kubernetes.io/docs/admin/master-node-communication/#controller-manager-configuration) for details.
 
@@ -159,3 +182,5 @@ See the [LICENSE](LICENSE) file for the full license text.
 * [CoreDNS](https://coredns.io/tags/documentation/)
 * [How To Install And Configure Kubernetes On Top Of A CoreOS Cluster](https://www.digitalocean.com/community/tutorials/how-to-install-and-configure-kubernetes-on-top-of-a-coreos-cluster)
 * [CoreOS + Kubernetes Step By Step](https://coreos.com/kubernetes/docs/latest/getting-started.html)
+* [Kubernetes API Authentication](https://kubernetes.io/docs/admin/authentication/)
+* [Kubernetes API Authorization](https://kubernetes.io/docs/admin/authorization/)
