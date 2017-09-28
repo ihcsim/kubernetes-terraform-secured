@@ -44,6 +44,11 @@ resource "digitalocean_droplet" "k8s_masters" {
     content = "${data.template_file.k8s_apiserver_token_file.rendered}"
     destination = "/opt/k8s/token.csv"
   }
+
+  provisioner "file" {
+    source = "${path.module}/k8s/master/abac.json"
+    destination = "/opt/k8s/abac.json"
+  }
 }
 
 resource "null_resource" "k8s_masters_tls" {

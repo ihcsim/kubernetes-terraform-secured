@@ -23,7 +23,8 @@ systemd:
           --audit-log-maxbackup=3 \
           --audit-log-maxsize=100 \
           --audit-log-path=/var/log/audit.log \
-          --authorization-mode=Node,RBAC \
+          --authorization-mode=Node,ABAC,RBAC \
+          --authorization-policy-file=/opt/k8s/abac.json \
           --bind-address=0.0.0.0 \
           --client-ca-file=${cacert_file} \
           --enable-swagger-ui=true \
