@@ -16,42 +16,28 @@ resource "digitalocean_droplet" "k8s_workers" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo mkdir -p ${var.k8s_bin_home} ${var.k8s_lib_kubelet_home} ${var.k8s_lib_kube_proxy_home}",
-      "sudo chown -R core ${var.k8s_home}",
-      "wget -P ${var.k8s_bin_home} https://storage.googleapis.com/kubernetes-release/release/${var.k8s_version}/bin/linux/amd64/kubelet",
-      "wget -P ${var.k8s_bin_home} https://storage.googleapis.com/kubernetes-release/release/${var.k8s_version}/bin/linux/amd64/kube-proxy",
-      "wget -P ${var.k8s_bin_home} https://storage.googleapis.com/kubernetes-release/release/${var.k8s_version}/bin/linux/amd64/kubectl",
-      "chmod +x ${var.k8s_bin_home}/*"
+      "sudo mkdir -p /opt/k8s/bin /opt/k8s/kubelet /opt/k8s/kube-proxy",
+      "sudo chown -R core /opt/k8s",
+      "wget -P /opt/k8s/bin https://storage.googleapis.com/kubernetes-release/release/${var.k8s_version}/bin/linux/amd64/kubelet",
+      "wget -P /opt/k8s/bin https://storage.googleapis.com/kubernetes-release/release/${var.k8s_version}/bin/linux/amd64/kube-proxy",
+      "wget -P /opt/k8s/bin https://storage.googleapis.com/kubernetes-release/release/${var.k8s_version}/bin/linux/amd64/kubectl",
+      "chmod +x /opt/k8s/bin/*"
     ]
   }
 
   provisioner "file" {
-    content = "${element(data.template_file.kubelet_kubeconfig.*.rendered, count.index)}"
-    destination = "${var.k8s_lib_kubelet_home}/kubeconfig"
+    content = "${data.template_file.kubelet_bootstrap_kubeconfig.rendered}"
+    destination = "/opt/k8s/kubelet/bootstrap-kubeconfig"
   }
 
   provisioner "file" {
     content = "${data.template_file.kube_proxy_kubeconfig.rendered}"
-    destination = "${var.k8s_lib_kube_proxy_home}/kubeconfig"
+    destination = "/opt/k8s/kube-proxy/kubeconfig"
   }
 
   provisioner "file" {
     content = "${data.template_file.kube_proxy_config.rendered}"
-    destination = "${var.k8s_lib_kube_proxy_home}/config"
-  }
-}
-
-resource "null_resource" "k8s_workers_tls" {
-  count = "${var.k8s_workers_count}"
-
-  triggers {
-    droplet = "${join(",", digitalocean_droplet.k8s_workers.*.id)}"
-  }
-
-  connection {
-    user = "${var.droplet_ssh_user}"
-    private_key = "${file(var.droplet_private_key_file)}"
-    host = "${element(digitalocean_droplet.k8s_workers.*.ipv4_address, count.index)}"
+    destination = "/opt/k8s/kube-proxy/config"
   }
 
   provisioner "remote-exec" {
@@ -67,16 +53,6 @@ resource "null_resource" "k8s_workers_tls" {
   }
 
   provisioner "file" {
-    content = "${element(tls_locally_signed_cert.kubelet.*.cert_pem, count.index)}"
-    destination = "${var.droplet_tls_certs_home}/${var.droplet_domain}/kubelet/${var.tls_cert_file}"
-  }
-
-  provisioner "file" {
-    content = "${element(tls_private_key.kubelet.*.private_key_pem, count.index)}"
-    destination = "${var.droplet_tls_certs_home}/${var.droplet_domain}/kubelet/${var.tls_key_file}"
-  }
-
-  provisioner "file" {
     content = "${tls_locally_signed_cert.kube_proxy.cert_pem}"
     destination = "${var.droplet_tls_certs_home}/${var.droplet_domain}/kube-proxy/${var.tls_cert_file}"
   }
@@ -84,6 +60,20 @@ resource "null_resource" "k8s_workers_tls" {
   provisioner "file" {
     content = "${tls_private_key.kube_proxy.private_key_pem}"
     destination = "${var.droplet_tls_certs_home}/${var.droplet_domain}/kube-proxy/${var.tls_key_file}"
+  }
+}
+
+resource "null_resource" "k8s_workers_rbac" {
+  count = "${var.k8s_workers_count}"
+
+  triggers {
+    workers = "${join(",", digitalocean_droplet.k8s_workers.*.name)}"
+  }
+
+  depends_on = ["null_resource.k8s_masters_rbac"]
+
+  provisioner "local-exec" {
+    command = "echo \"${element(data.template_file.k8s_workers_rbac.*.rendered, count.index)}\" | kubectl --kubeconfig=${path.module}/.kubeconfig create -f -"
   }
 }
 
@@ -103,10 +93,7 @@ data "template_file" "k8s_workers_config" {
     cluster_dns_ip = "${var.k8s_cluster_dns_ip}"
     cluster_domain = "${var.k8s_cluster_domain}"
 
-    lib_home = "${var.k8s_lib_home}"
-    kubelet_kubeconfig = "${var.k8s_lib_kubelet_home}/kubeconfig"
-    kube_proxy_config_file = "${var.k8s_lib_kube_proxy_home}/config"
-    kube_proxy_config = "${jsonencode(data.template_file.kube_proxy_config.rendered)}"
+    kubelet_kubeconfig = "/opt/k8s/kubelet/kubeconfig"
 
     etcd_client_port = "${var.etcd_client_port}"
 
@@ -114,6 +101,7 @@ data "template_file" "k8s_workers_config" {
     domain = "${var.droplet_domain}"
 
     cacert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cacert_file}"
+    cert_dir = "${var.droplet_tls_certs_home}/${var.droplet_domain}/kubelet/"
     cert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/kubelet/${var.tls_cert_file}"
     key_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/kubelet/${var.tls_key_file}"
 
@@ -123,24 +111,20 @@ data "template_file" "k8s_workers_config" {
   }
 }
 
-data "template_file" "kubelet_kubeconfig" {
-  count = "${var.k8s_workers_count}"
-  template = "${file("${path.module}/k8s/workers/kubeconfig")}"
+data "template_file" "kubelet_bootstrap_kubeconfig" {
+  template = "${file("${path.module}/k8s/workers/kubelet-bootstrap-kubeconfig")}"
 
   vars {
     apiserver_endpoint = "${format("https://%s:%s", digitalocean_droplet.k8s_masters.0.ipv4_address_private, var.k8s_apiserver_secure_port)}"
-
     cacert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cacert_file}"
-    client_cert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/kubelet/${var.tls_cert_file}"
-    client_key_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/kubelet/${var.tls_key_file}"
-
     cluster_name = "${var.k8s_cluster_name}"
-    username = "${format("k8s-worker-%02d", count.index)}"
+    username = "kubelet-bootstrap"
+    token = "${var.k8s_kubelet_bootstrap_token}"
   }
 }
 
 data "template_file" "kube_proxy_kubeconfig" {
-  template = "${file("${path.module}/k8s/workers/kubeconfig")}"
+  template = "${file("${path.module}/k8s/workers/kube-proxy-kubeconfig")}"
 
   vars {
     apiserver_endpoint = "${format("https://%s:%s", digitalocean_droplet.k8s_masters.0.ipv4_address_private, var.k8s_apiserver_secure_port)}"
@@ -159,58 +143,18 @@ data "template_file" "kube_proxy_config" {
 
   vars {
     cluster_cidr = "${var.k8s_cluster_cidr}"
-    kube_proxy_kubeconfig = "${var.k8s_lib_kube_proxy_home}/kubeconfig"
+    kube_proxy_kubeconfig = "/opt/k8s/kube-proxy/kubeconfig"
   }
 }
 
-resource "tls_private_key" "kubelet" {
+data "template_file" "k8s_workers_rbac" {
   count = "${var.k8s_workers_count}"
 
-  algorithm = "RSA"
-  rsa_bits = 4096
-}
+  template = "${file("${path.module}/k8s/workers/rbac.yaml")}"
 
-resource "tls_cert_request" "kubelet" {
-  count = "${var.k8s_workers_count}"
-
-  key_algorithm = "${element(tls_private_key.kubelet.*.algorithm, count.index)}"
-  private_key_pem = "${element(tls_private_key.kubelet.*.private_key_pem, count.index)}"
-
-  subject {
-    common_name = "${var.tls_workers_cert_subject_common_name}:${element(digitalocean_droplet.k8s_workers.*.name, count.index)}"
-    organization = "${var.tls_workers_cert_subject_organization}"
-    organizational_unit = "${var.tls_cert_subject_organizational_unit}"
-    street_address = ["${var.tls_cert_subject_street_address}"]
-    locality = "${var.tls_cert_subject_locality}"
-    province = "${var.tls_cert_subject_province}"
-    country = "${var.tls_cert_subject_country}"
-    postal_code = "${var.tls_cert_subject_postal_code}"
+  vars {
+    node = "${element(digitalocean_droplet.k8s_workers.*.name, count.index)}"
   }
-
-  ip_addresses = [
-    "${element(digitalocean_droplet.k8s_workers.*.ipv4_address_private, count.index)}"
-  ]
-
-  dns_names = [
-    "${element(digitalocean_droplet.k8s_workers.*.name, count.index)}",
-    "${element(digitalocean_droplet.k8s_workers.*.name, count.index)}.${var.droplet_domain}",
-  ]
-}
-
-resource "tls_locally_signed_cert" "kubelet" {
-  count = "${var.k8s_workers_count}"
-
-  cert_request_pem = "${element(tls_cert_request.kubelet.*.cert_request_pem, count.index)}"
-  ca_key_algorithm = "${tls_private_key.cakey.algorithm}"
-  ca_private_key_pem = "${tls_private_key.cakey.private_key_pem}"
-  ca_cert_pem = "${tls_self_signed_cert.cacert.cert_pem}"
-  validity_period_hours = "${var.tls_cert_validity_period_hours}"
-  early_renewal_hours = "${var.tls_cert_early_renewal_hours}"
-
-  allowed_uses = [
-    "server_auth",
-    "client_auth"
-  ]
 }
 
 resource "tls_private_key" "kube_proxy" {

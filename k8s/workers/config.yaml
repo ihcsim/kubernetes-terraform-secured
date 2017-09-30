@@ -16,6 +16,8 @@ systemd:
         ExecStart=/opt/k8s/bin/kubelet \
           --allow-privileged=true \
           --address=$${COREOS_DIGITALOCEAN_IPV4_PRIVATE_0} \
+          --bootstrap-kubeconfig=/opt/k8s/kubelet/bootstrap-kubeconfig \
+          --cert-dir=${cert_dir} \
           --cluster-dns=${cluster_dns_ip} \
           --cluster-domain=${cluster_domain} \
           --container-runtime=docker \
@@ -25,10 +27,8 @@ systemd:
           --kubeconfig=${kubelet_kubeconfig} \
           --register-node=true \
           --require-kubeconfig=true \
-          --root-dir=${lib_home} \
+          --root-dir=/opt/k8s/kubelet \
           --runtime-request-timeout=10m \
-          --tls-cert-file=${cert_file} \
-          --tls-private-key-file=${key_file} \
           --v=2
         Restart=on-failure
         RestartSec=5
@@ -45,7 +45,7 @@ systemd:
 
         [Service]
         ExecStart=/opt/k8s/bin/kube-proxy \
-          --config=${kube_proxy_config_file}
+          --config=/opt/k8s/kube-proxy/config
         Restart=on-failure
         RestartSec=5
 
@@ -54,15 +54,6 @@ systemd:
 
 storage:
   files:
-    - path: ${kube_proxy_config_file}
-      filesystem: root
-      mode: 0644
-      user:
-        id: 500
-      group:
-        id: 500
-      contents:
-        inline: ${kube_proxy_config}
     - path: /etc/systemd/resolved.conf.d/00-droplet.conf
       filesystem: root
       mode: 0644

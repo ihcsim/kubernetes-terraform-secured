@@ -128,8 +128,8 @@ variable "k8s_apiserver_encryption_config_file" {
   default = "/opt/k8s/encryption-config.yaml"
 }
 
-variable "k8s_apiserver_client_token" {
-  description = "Client's bearer token used to authenticate with the API Server"
+variable "k8s_kubelet_bootstrap_token" {
+  description = "Bearer token used to bootstrap TLS client cert for kubelets. Refer https://kubernetes.io/docs/admin/kubelet-tls-bootstrapping/"
 }
 
 variable "tls_cacert_file" {

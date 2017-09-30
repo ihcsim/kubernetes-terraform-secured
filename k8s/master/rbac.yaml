@@ -1,0 +1,35 @@
+# A ClusterRole which instructs the CSR approver to approve a user requesting node client credentials.
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: approve-node-client-csr
+rules:
+  - apiGroups: ["certificates.k8s.io"]
+    resources: ["certificatesigningrequests/nodeclient"]
+    verbs: ["create"]
+
+---
+# A ClusterRole which instructs the CSR approver to approve a node renewing its own client credentials.
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: approve-node-client-renewal-csr
+rules:
+  - apiGroups: ["certificates.k8s.io"]
+    resources: ["certificatesigningrequests/selfnodeclient"]
+    verbs: ["create"]
+
+---
+# Approve all CSRs for the group "system:bootstrappers"
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: auto-approve-csrs-for-group
+subjects:
+  - kind: Group
+    name: system:bootstrappers
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: approve-node-client-csr
+  apiGroup: rbac.authorization.k8s.io

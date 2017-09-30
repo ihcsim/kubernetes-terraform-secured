@@ -40,7 +40,7 @@ systemd:
           --kubelet-client-certificate=${cert_file} \
           --kubelet-client-key=${key_file} \
           --kubelet-https=true \
-          --runtime-config=rbac.authorization.k8s.io/v1alpha1 \
+          --runtime-config=rbac.authorization.k8s.io/v1beta1 \
           --secure-port=${apiserver_secure_port} \
           --service-account-key-file=${cakey_file} \
           --service-cluster-ip-range=${service_cluster_ip_range} \
