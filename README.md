@@ -59,7 +59,7 @@ var.etcd_discovery_url
 ```
 Note that in order to initialize the etcd cluster, the `etcd_discovery_url` variable needs to be assigned a value obtained from https://discovery.etcd.io/new?size=N, where `N` is the number of etcd nodes in the cluster.
 
-Once Terraform completes the provisioning operation, the `kubeconfig` data of the new Kubernetes cluster will be output to a local git-ignored `.kubeconfig` file. This `.kubeconfig` file can be used to interact with the new cluster.
+Once Terraform completes the provisioning operation, the `kubeconfig` information of the new Kubernetes cluster will be output to a local git-ignored `.kubeconfig` file. This `.kubeconfig` file can be used to interact with the new cluster.
 
 For example,
 ```sh
@@ -130,15 +130,9 @@ The API Server is started with the following admission controllers:
 1. DefaultTolerationSeconds
 1. NodeRestriction
 
-All API requests to the API Server are authenticated using X.509 TLS certificates and static bearer tokens. The API Server is started with the `--anonymous-auth=false` flag in order to disable [anonymous requests](https://kubernetes.io/docs/admin/authentication/#anonymous-requests). Refer to the Kubernetes [_Authentication_](https://kubernetes.io/docs/admin/authentication/) documentation for more information on these authentication strategies.
+All API requests to the API Server are authenticated using X.509 TLS certificates. The CSR, certificates and private keys are declared in the `k8s-master.tf` and `k8s-workers` files. The API Server is started with the `--anonymous-auth=false` flag in order to disable [anonymous requests](https://kubernetes.io/docs/admin/authentication/#anonymous-requests). The Controller Manager and Scheduler communicate with the API Server via its insecure network interface since these components reside on the same host as the API Server. Refer to the Kubernetes [_Authentication_](https://kubernetes.io/docs/admin/authentication/) documentation for more information on these authentication strategies.
 
-Use the `k8s/master/token.csv` file to add more bearer token. The access rights of the corresponding users are specified in the `k8s/master/abac.json` file.
-
-All communications between the API Servers, etcd, kubelets and clients (such as kubectl) are secured with TLS certs. The CSR, certificates and private keys are declared in the `k8s-master.tf` and `k8s-workers` files. The Controller Manager and Scheduler communicate with the API Server via its insecure network interface since these components reside on the same host as the API Server.
-
-The worker kubelets generate their own private keys and CSRs, which are submitted to API Servers for certificate-signing by the cluster-level CA. Every kubelet is started with a `bootstrap-kubeconfig` file which provides connection information to the API server, and bootstrap credential as defined in the `token.csv` file. The `ClusterRole` and `ClusterRoleBinding` resources that define the permissions for a kubelet to request for and renew its certificate are defined in the `k8s/master/rbac.yaml` and `k8s/workers/rbac.yaml` files.  Refer Kubernetes documentation on [kubelet TLS boostrapping](https://kubernetes.io/docs/admin/kubelet-tls-bootstrapping/) for more information.
-
-The Controller Manager uses the CA cert and key declared in `ca.tf` to serve cluster-scoped certificates-issuing requests. Refer to the [Master Node Communication docs](http://kubernetes.io/docs/admin/master-node-communication/#controller-manager-configuration) for details.
+The worker kubelets generate their own private keys and CSRs during bootstrap. These TLS artifacts are then submitted to API Servers for certificate-signing by the cluster CA. Every kubelet is started with a `bootstrap-kubeconfig` file which contains connection information to the API server, and bootstrap credential as defined in the `token.csv` file. The `ClusterRole` and `ClusterRoleBinding` resources that define the permissions for a kubelet to request for and renew its certificate are defined in the `k8s/master/rbac.yaml` and `k8s/workers/rbac.yaml` files.  Refer Kubernetes documentation on [kubelet TLS boostrapping](https://kubernetes.io/docs/admin/kubelet-tls-bootstrapping/) for more information. The Controller Manager uses the CA cert and key declared in `ca.tf` to serve cluster-scoped certificates-issuing requests. Refer to the [Master Node Communication docs](http://kubernetes.io/docs/admin/master-node-communication/#controller-manager-configuration) for details.
 
 ## Add-ons
 All add-ons are deployed using [Helm charts](https://helm.sh/).
