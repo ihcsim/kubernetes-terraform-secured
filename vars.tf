@@ -77,7 +77,7 @@ variable "etcd_heartbeat_interval" {
 }
 
 variable "etcd_election_timeout" {
-  default = 5000
+  default = 25000
 }
 
 variable "k8s_version" {

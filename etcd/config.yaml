@@ -20,6 +20,9 @@ etcd:
   cert_file: ${cert_file}
   key_file: ${key_file}
 
+  heartbeat_interval: ${etcd_heartbeat_interval}
+  election_timeout: ${etcd_election_timeout}
+
 systemd:
   units:
     - name: var-lib-etcd.mount
