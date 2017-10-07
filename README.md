@@ -39,7 +39,7 @@ The above command will fail with errors complaining about the missing [Config Tr
 Use the following commands to install the Config Transpiler provider:
 ```sh
 $ go get -u github.com/coreos/terraform-provider-ct
-$ cp $GOPATH/bin/terraform-provider-ct kuberntes-terraform-secured/.terraform/plugins/<os_arch>/
+$ cp $GOPATH/bin/terraform-provider-ct kubernetes-terraform-secured/.terraform/plugins/<os_arch>/
 ```
 
 Re-initialize the project:
@@ -57,11 +57,11 @@ var.etcd_discovery_url
 
   Enter a value
 ```
-Note that in order to initialize the etcd cluster, the `etcd_discovery_url` variable needs to be assigned a value obtained from https://discovery.etcd.io/new?size=N, where `N` is the number of etcd nodes in the cluster.
+Note that in order to initialize the etcd cluster, the `etcd_discovery_url` variable must be assigned a value obtained from https://discovery.etcd.io/new?size=N, where `N` is the number of etcd nodes in the cluster.
 
-Once Terraform completes the provisioning operation, the `kubeconfig` data of the new Kubernetes cluster will be output. Copy its content into your `kubeconfig` file, and then verify that the cluster is healthy:
+Once Terraform completes provisioning the cluster, the `kubeconfig` data of the new Kubernetes cluster will be output to a local git-ignored `.kubeconfig` file. Use it to interact with the cluster:
 ```sh
-$ kubectl --kubeconfig=<your_kubeconfig_file> get componentstatuses
+$ kubectl --kubeconfig=.kubeconfig get componentstatuses
 NAME                 STATUS    MESSAGE              ERROR
 scheduler            Healthy   ok
 controller-manager   Healthy   ok
@@ -69,31 +69,12 @@ etcd-0               Healthy   {"health": "true"}
 etcd-2               Healthy   {"health": "true"}
 etcd-1               Healthy   {"health": "true"}
 
-$ kubectl --kubeconfig=<your_kubeconfig_file> get no
+$ kubectl --kubeconfig=.kubeconfig get no
 NAME            STATUS    AGE       VERSION
 k8s-worker-00   Ready     44s       v1.7.0
 k8s-worker-01   Ready     46s       v1.7.0
 k8s-worker-02   Ready     48s       v1.7.0
 ```
-
-A bearer token which can be included in the `Authorization` header of HTTP requests will also be output. For example,
-```sh
-$ curl --cacert <cacert> https://<k8s_master_public_ip>:6443/version
-Unauthorized
-$ curl --cacert <cacert> -H "Authorization: Bearer <token>" https://<public_ip>:6443/version
-{
-  "major": "1",
-  "minor": "7",
-  "gitVersion": "v1.7.0",
-  "gitCommit": "d3ada0119e776222f11ec7945e6d860061339aad",
-  "gitTreeState": "clean",
-  "buildDate": "2017-06-29T22:55:19Z",
-  "goVersion": "go1.8.3",
-  "compiler": "gc",
-  "platform": "linux/amd64"
-}
-```
-Note that the base64-encoded CA cert can be obtained from the `kubeconfig` output.
 
 ## Cluster Layout
 By default, this project provisions a cluster that is comprised of:
@@ -147,13 +128,11 @@ The API Server is started with the following admission controllers:
 1. DefaultTolerationSeconds
 1. NodeRestriction
 
-All API requests to the API Server are authenticated using X.509 TLS certificates and static bearer tokens. (To disable [anonymous requests](https://kubernetes.io/docs/admin/authentication/#anonymous-requests), the API Server is started with the `--anonymous-auth=false` flag.) Refer to the Kubernetes [_Authentication_](https://kubernetes.io/docs/admin/authentication/) documentation for more information on these authentication strategies.
+All API requests to the API Server are authenticated using X.509 TLS certificates. The API Server is started with the `--anonymous-auth=false` flag in order to disable [anonymous requests](https://kubernetes.io/docs/admin/authentication/#anonymous-requests). Refer to the Kubernetes [_Authentication_](https://kubernetes.io/docs/admin/authentication/) documentation for more information on these authentication strategies.
 
-Use the `k8s/master/token.csv` file to add more bearer token. The access rights of the corresponding users are specified in the `k8s/master/abac.json` file.
+The Kubelets are also started with the `--anonymous-auth=false` option. They use the `--authentication-token-webhook` and `--authorization-mode-Webhook` options to enable authentication and authorization. For more information on Kubelet authentication and authorization, refer to the Kubernetes [documentation](https://kubernetes.io/docs/admin/kubelet-authentication-authorization/).
 
-All communications between the API Server, etcd, Kubelet and clients such as Kubectl are secured with TLS certs. The certificates and private keys are declared in the `k8s-master.tf` and `k8s-workers` files. The CSRs used to generate the certificate are also found in the same files. Since the Controller Manager and Scheduler resides on the same host as the API Server, they can communicate with the API Server via its insecure network interface.
-
-The Controller Manager uses the CA cert and key declared in `ca.tf` to serve cluster-scoped certificates-issuing requests. Refer to the [Master Node Communication docs](http://kubernetes.io/docs/admin/master-node-communication/#controller-manager-configuration) for details.
+All the TLS artifacts are declared in the `ca.tf`, `k8s-master.tf` and `k8s-workers` files. Since the Controller Manager and Scheduler resides on the same host as the API Server, they can communicate with the API Server via its insecure network interface. The Controller Manager uses the CA cert and key declared in `ca.tf` to serve cluster-scoped certificates-issuing requests. Refer to the [Master Node Communication docs](http://kubernetes.io/docs/admin/master-node-communication/#controller-manager-configuration) for details.
 
 ## Add-ons
 All add-ons are deployed using [Helm charts](https://helm.sh/).

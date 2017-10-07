@@ -16,6 +16,10 @@ systemd:
         ExecStart=/opt/k8s/bin/kubelet \
           --allow-privileged=true \
           --address=$${COREOS_DIGITALOCEAN_IPV4_PRIVATE_0} \
+          --anonymous-auth=false \
+          --authentication-token-webhook \
+          --authorization-mode=Webhook \
+          --client-ca-file=${cacert_file} \
           --cluster-dns=${cluster_dns_ip} \
           --cluster-domain=${cluster_domain} \
           --container-runtime=docker \

@@ -173,7 +173,7 @@ variable "tls_kube_apiserver_cert_subject_common_name" {
 
 variable "tls_kube_apiserver_cert_subject_organization" {
   description = "The kubernetes API Server TLS cert subject organization name."
-  default = "kubernetes"
+  default = "system:masters"
 }
 
 variable "tls_kube_proxy_cert_subject_common_name" {

@@ -135,7 +135,7 @@ data "template_file" "kubelet_kubeconfig" {
     client_key_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/kubelet/${var.tls_key_file}"
 
     cluster_name = "${var.k8s_cluster_name}"
-    username = "${format("k8s-worker-%02d", count.index)}"
+    username = "system:node:${format("k8s-worker-%02d", count.index)}"
   }
 }
 
