@@ -128,10 +128,6 @@ variable "k8s_apiserver_encryption_config_file" {
   default = "/opt/k8s/encryption-config.yaml"
 }
 
-variable "k8s_apiserver_client_token" {
-  description = "Client's bearer token used to authenticate with the API Server"
-}
-
 variable "tls_cacert_file" {
   default = "cacert.pem"
 }
