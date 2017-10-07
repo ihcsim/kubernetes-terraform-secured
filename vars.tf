@@ -81,7 +81,7 @@ variable "etcd_election_timeout" {
 }
 
 variable "k8s_version" {
-  default = "v1.7.0"
+  default = "v1.8.0"
 }
 
 variable "k8s_cluster_name" {
