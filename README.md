@@ -128,11 +128,9 @@ The API Server is started with the following admission controllers:
 1. DefaultTolerationSeconds
 1. NodeRestriction
 
-All API requests to the API Server are authenticated using X.509 TLS certificates. The API Server is started with the `--anonymous-auth=false` flag in order to disable [anonymous requests](https://kubernetes.io/docs/admin/authentication/#anonymous-requests). Refer to the Kubernetes [_Authentication_](https://kubernetes.io/docs/admin/authentication/) documentation for more information on these authentication strategies.
+All API requests to the API Server are authenticated using X.509 TLS certificates. The API Server is started with the `--anonymous-auth=false` flag in order to disable [anonymous requests](https://kubernetes.io/docs/admin/authentication/#anonymous-requests). Refer to the Kubernetes [_Authentication_](https://kubernetes.io/docs/admin/authentication/) documentation for more information on how the authentication scheme works. All the TLS artifacts are declared in the `ca.tf`, `k8s-master.tf` and `k8s-workers` files. The Controller Manager and Scheduler communicate with the API Server via its insecure network interface, since they resides on the same host as the API Server. The Controller Manager uses the CA cert and key declared in `ca.tf` to serve cluster-scoped certificates-issuing requests.
 
-The Kubelets are also started with the `--anonymous-auth=false` option. They use the `--authentication-token-webhook` and `--authorization-mode-Webhook` options to enable authentication and authorization. For more information on Kubelet authentication and authorization, refer to the Kubernetes [documentation](https://kubernetes.io/docs/admin/kubelet-authentication-authorization/).
-
-All the TLS artifacts are declared in the `ca.tf`, `k8s-master.tf` and `k8s-workers` files. Since the Controller Manager and Scheduler resides on the same host as the API Server, they can communicate with the API Server via its insecure network interface. The Controller Manager uses the CA cert and key declared in `ca.tf` to serve cluster-scoped certificates-issuing requests. Refer to the [Master Node Communication docs](http://kubernetes.io/docs/admin/master-node-communication/#controller-manager-configuration) for details.
+The Kubelets are also started with the `--anonymous-auth=false` option. They use the `--authentication-token-webhook` and `--authorization-mode-Webhook` options to enable authentication and authorization. For more information on Kubelet authentication and authorization, refer to this [documentation](https://kubernetes.io/docs/admin/kubelet-authentication-authorization/).
 
 ## Add-ons
 All add-ons are deployed using [Helm charts](https://helm.sh/).
@@ -163,3 +161,5 @@ See the [LICENSE](LICENSE) file for the full license text.
 * [CoreOS + Kubernetes Step By Step](https://coreos.com/kubernetes/docs/latest/getting-started.html)
 * [Kubernetes API Authentication](https://kubernetes.io/docs/admin/authentication/)
 * [Kubernetes API Authorization](https://kubernetes.io/docs/admin/authorization/)
+* [Kubelet Authentication & Authorization](https://kubernetes.io/docs/admin/kubelet-authentication-authorization/)
+* [Kubernetes Master Node Communication](http://kubernetes.io/docs/admin/master-node-communication/#controller-manager-configuration) for details.
