@@ -23,8 +23,7 @@ systemd:
           --audit-log-maxbackup=3 \
           --audit-log-maxsize=100 \
           --audit-log-path=/var/log/audit.log \
-          --authorization-mode=Node,ABAC,RBAC \
-          --authorization-policy-file=/opt/k8s/abac.json \
+          --authorization-mode=Node,RBAC \
           --bind-address=0.0.0.0 \
           --client-ca-file=${cacert_file} \
           --enable-swagger-ui=true \
@@ -40,7 +39,7 @@ systemd:
           --kubelet-client-certificate=${cert_file} \
           --kubelet-client-key=${key_file} \
           --kubelet-https=true \
-          --runtime-config=rbac.authorization.k8s.io/v1alpha1 \
+          --runtime-config=rbac.authorization.k8s.io/v1beta1 \
           --secure-port=${apiserver_secure_port} \
           --service-account-key-file=${cakey_file} \
           --service-cluster-ip-range=${service_cluster_ip_range} \
