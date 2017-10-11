@@ -6,13 +6,12 @@ resource "null_resource" "client_kubeconfig" {
   depends_on = ["null_resource.k8s_masters_tls"]
 
   provisioner "local-exec" {
-     command = <<EOT
-       rm -f ${path.module}/.kubeconfig
-       echo "${data.template_file.kubeconfig.rendered}" >> ${path.module}/.kubeconfig
-       sleep 120
-       kubectl --kubeconfig=${path.module}/.kubeconfig cluster-info
-       kubectl --kubeconfig=${path.module}/.kubeconfig get componentstatus
-     EOT
+    command = <<EOT
+      rm -f ${path.module}/.kubeconfig
+      echo "${data.template_file.kubeconfig.rendered}" >> ${path.module}/.kubeconfig
+      sleep ${var.kubectl_wait}
+      kubectl --kubeconfig=${path.module}/.kubeconfig cluster-info
+    EOT
   }
 }
 

@@ -257,3 +257,12 @@ variable "k8s_lib_kube_proxy_home" {
 variable "k8s_workers_count" {
   default = 3
 }
+
+variable "kubelet_bootstrapper_token" {
+  description = "Token used by bootstrapper to generate kubelet TLS artifacts"
+}
+
+variable "kubectl_wait" {
+  description = "Wait duration in seconds before calling any kubectl commands"
+  default = "300"
+}

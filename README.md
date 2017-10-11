@@ -22,6 +22,7 @@ This project uses [Terraform](https://www.terraform.io/) to provision [Kubernete
 * [Container Linux Config Transpiler Provider](https://github.com/coreos/terraform-provider-ct)
 * [Go 1.8.3](https://golang.org/dl/)
 * [doctl 1.7.0](https://github.com/digitalocean/doctl)
+* [kubectl 1.8.0](https://storage.googleapis.com/kubernetes-release/release/v1.8.0/bin/linux/amd64/kubectl)
 
 ## Getting Started
 To get started, clone this repository:

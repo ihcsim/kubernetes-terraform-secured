@@ -1,1 +1,1 @@
-${client_token},client,000
+${bootstrapper_token},kubelet-bootstrapper,10001,system:bootstrappers

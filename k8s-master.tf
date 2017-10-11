@@ -87,6 +87,14 @@ resource "null_resource" "k8s_masters_tls" {
   }
 }
 
+resource "null_resource" "k8s_masters_rbac" {
+  depends_on = ["null_resource.client_kubeconfig"]
+
+  provisioner "local-exec" {
+    command = "cat ${path.module}/k8s/master/rbac.yaml | kubectl --kubeconfig=${path.module}/.kubeconfig create -f -"
+  }
+}
+
 data "ct_config" "k8s_master" {
   platform = "digitalocean"
   content = "${data.template_file.k8s_master_config.rendered}"
@@ -136,7 +144,7 @@ data "template_file" "k8s_apiserver_token_file" {
   template = "${file("${path.module}/k8s/master/token.csv")}"
 
   vars {
-    client_token = ""
+    bootstrapper_token = "${var.kubelet_bootstrapper_token}"
   }
 }
 

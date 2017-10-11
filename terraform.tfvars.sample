@@ -6,6 +6,8 @@ droplet_private_key_id =
 
 k8s_apiserver_encryption_key = ""
 
+kubelet_bootstrapper_token = ""
+
 tls_cacert_subject_common_name = ""
 tls_cacert_subject_organization = ""
 
