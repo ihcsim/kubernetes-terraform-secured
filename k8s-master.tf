@@ -102,7 +102,6 @@ data "template_file" "k8s_master_config" {
     apiserver_secure_port = "${var.k8s_apiserver_secure_port}"
 
     etcd_endpoints = "${join(",", formatlist("https://%s:%s", digitalocean_droplet.etcd.*.ipv4_address_private, var.etcd_client_port))}"
-    etcd_client_port = "${var.etcd_client_port}"
 
     dns_server = "${digitalocean_droplet.coredns.ipv4_address_private}"
     domain = "${var.droplet_domain}"

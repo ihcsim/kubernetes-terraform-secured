@@ -40,8 +40,8 @@ variable "droplet_update_channel" {
 }
 
 variable "coreos_image" {
-  default = "27983391"
-  description = "Image ID of CoreOS 1465.8.0."
+  default = "coreos-stable"
+  description = "Slug of CoreOS image"
 }
 
 variable "coredns_version" {

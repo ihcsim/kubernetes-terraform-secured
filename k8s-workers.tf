@@ -108,7 +108,8 @@ data "template_file" "k8s_workers_config" {
     kube_proxy_config_file = "${var.k8s_lib_kube_proxy_home}/config"
     kube_proxy_config = "${jsonencode(data.template_file.kube_proxy_config.rendered)}"
 
-    etcd_client_port = "${var.etcd_client_port}"
+
+    etcd_endpoints = "${join(",", formatlist("https://%s:%s", digitalocean_droplet.etcd.*.ipv4_address_private, var.etcd_client_port))}"
 
     dns_server = "${digitalocean_droplet.coredns.ipv4_address_private}"
     domain = "${var.droplet_domain}"
