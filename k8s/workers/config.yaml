@@ -24,11 +24,10 @@ systemd:
           --cluster-domain=${cluster_domain} \
           --container-runtime=docker \
           --docker-endpoint=unix://var/run/docker.sock \
-          --enable-custom-metrics \
           --image-pull-progress-deadline=2m \
           --kubeconfig=${kubelet_kubeconfig} \
+          --network-plugin=cni \
           --register-node=true \
-          --require-kubeconfig=true \
           --root-dir=${lib_home} \
           --runtime-request-timeout=10m \
           --tls-cert-file=${cert_file} \

@@ -87,6 +87,20 @@ resource "null_resource" "k8s_masters_tls" {
   }
 }
 
+resource "null_resource" "flannel_manifest" {
+  triggers {
+    master = "${digitalocean_droplet.k8s_masters.0.id}"
+  }
+
+  depends_on = ["null_resource.client_kubeconfig"]
+
+  provisioner "local-exec" {
+    command = <<EOT
+      echo "${data.template_file.flannel_manifest.rendered}" | kubectl --kubeconfig=.kubeconfig create -f -
+    EOT
+  }
+}
+
 data "ct_config" "k8s_master" {
   platform = "digitalocean"
   content = "${data.template_file.k8s_master_config.rendered}"
@@ -136,6 +150,17 @@ data "template_file" "k8s_apiserver_token_file" {
 
   vars {
     client_token = ""
+  }
+}
+
+data "template_file" "flannel_manifest" {
+  template = "${file("${path.module}/k8s/network/flannel.yaml")}"
+
+  vars {
+    flannel_version = "${var.flannel_version}"
+    pod_cidr = "${var.k8s_cluster_cidr}"
+    apiserver_endpoint = "${format("https://%s:%s", digitalocean_droplet.k8s_masters.0.ipv4_address_private, var.k8s_apiserver_secure_port)}"
+    kubeconfig_file = "${var.flannel_kubeconfig_file}"
   }
 }
 
