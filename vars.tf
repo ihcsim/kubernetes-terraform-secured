@@ -97,7 +97,7 @@ variable "k8s_cluster_domain" {
 }
 
 variable "k8s_cluster_cidr" {
-  default = "10.200.0.0/16"
+  default = "10.244.0.0/22"
 }
 
 variable "k8s_service_cluster_ip_range" {
@@ -256,4 +256,24 @@ variable "k8s_lib_kube_proxy_home" {
 
 variable "k8s_workers_count" {
   default = 3
+}
+
+variable "k8s_cni_home" {
+  default = "/opt/cni/bin"
+}
+
+variable "k8s_cni_version" {
+  default = "v0.6.0"
+}
+
+variable "flannel_version" {
+  default = "v0.9.0"
+}
+
+variable "flannel_run" {
+  default = "/run/kube-flannel"
+}
+
+variable "flannel_kubeconfig_file" {
+  default = "/run/kube-flannel/kubeconfig"
 }
