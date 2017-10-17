@@ -1,6 +1,6 @@
 resource "null_resource" "client_kubeconfig" {
   triggers {
-     master = "${digitalocean_droplet.k8s_masters.0.id}"
+    master = "${digitalocean_droplet.k8s_masters.0.id}"
   }
 
   depends_on = ["null_resource.k8s_masters_tls"]
@@ -8,7 +8,7 @@ resource "null_resource" "client_kubeconfig" {
   provisioner "local-exec" {
      command = <<EOT
        rm -f ${path.module}/.kubeconfig
-       echo "${data.template_file.kubeconfig.rendered}" >> ${path.module}/.kubeconfig
+       echo "${data.template_file.client_kubeconfig.rendered}" >> ${path.module}/.kubeconfig
        sleep 120
        kubectl --kubeconfig=${path.module}/.kubeconfig cluster-info
        kubectl --kubeconfig=${path.module}/.kubeconfig get componentstatus
@@ -17,7 +17,7 @@ resource "null_resource" "client_kubeconfig" {
 }
 
 
-data "template_file" "kubeconfig" {
+data "template_file" "client_kubeconfig" {
   template = "${file("${path.module}/k8s/client/kubeconfig")}"
 
   vars {

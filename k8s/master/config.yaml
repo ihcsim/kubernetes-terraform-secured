@@ -39,7 +39,7 @@ systemd:
           --kubelet-client-certificate=${cert_file} \
           --kubelet-client-key=${key_file} \
           --kubelet-https=true \
-          --runtime-config=rbac.authorization.k8s.io/v1beta1 \
+          --runtime-config=api/all \
           --secure-port=${apiserver_secure_port} \
           --service-account-key-file=${cakey_file} \
           --service-cluster-ip-range=${service_cluster_ip_range} \
@@ -62,15 +62,14 @@ systemd:
         Description=Kubernetes Controller Manager
         Requires=coreos-metadata.service
         After=coreos-metadata.service
-        After=docker.service
         After=kube-apiserver.service
-        Wants=docker.service
         Wants=kube-apiserver.service
 
         [Service]
         EnvironmentFile=/run/metadata/coreos
         ExecStart=/opt/k8s/bin/kube-controller-manager \
           --address=0.0.0.0 \
+          --allocate-node-cidrs=true \
           --cluster-cidr=${cluster_cidr} \
           --cluster-name=${cluster_name} \
           --cluster-signing-cert-file=${cacert_file} \
@@ -94,9 +93,7 @@ systemd:
         Description=Kubernetes Scheduler
         Requires=coreos-metadata.service
         After=coreos-metadata.service
-        After=docker.service
         After=kube-apiserver.service
-        Wants=docker.service
         Wants=kube-apiserver.service
 
         [Service]

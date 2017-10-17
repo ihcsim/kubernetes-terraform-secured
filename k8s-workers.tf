@@ -16,12 +16,14 @@ resource "digitalocean_droplet" "k8s_workers" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo mkdir -p ${var.k8s_bin_home} ${var.k8s_lib_kubelet_home} ${var.k8s_lib_kube_proxy_home}",
-      "sudo chown -R core ${var.k8s_home}",
+      "sudo mkdir -p ${var.k8s_bin_home} ${var.k8s_lib_kubelet_home} ${var.k8s_lib_kube_proxy_home} ${var.k8s_cni_home}",
+      "sudo chown -R core ${var.k8s_home} ${var.k8s_cni_home}",
       "wget -P ${var.k8s_bin_home} https://storage.googleapis.com/kubernetes-release/release/${var.k8s_version}/bin/linux/amd64/kubelet",
       "wget -P ${var.k8s_bin_home} https://storage.googleapis.com/kubernetes-release/release/${var.k8s_version}/bin/linux/amd64/kube-proxy",
       "wget -P ${var.k8s_bin_home} https://storage.googleapis.com/kubernetes-release/release/${var.k8s_version}/bin/linux/amd64/kubectl",
-      "chmod +x ${var.k8s_bin_home}/*"
+      "chmod +x ${var.k8s_bin_home}/*",
+      "wget -P ${var.k8s_cni_home} https://github.com/containernetworking/plugins/releases/download/${var.k8s_cni_version}/cni-plugins-amd64-${var.k8s_cni_version}.tgz",
+      "tar -xvf ${var.k8s_cni_home}/cni-plugins-amd64-${var.k8s_cni_version}.tgz -C ${var.k8s_cni_home}"
     ]
   }
 
@@ -87,6 +89,29 @@ resource "null_resource" "k8s_workers_tls" {
   }
 }
 
+resource "null_resource" "flannel_kubeconfig" {
+  count = "${var.k8s_workers_count}"
+
+  triggers {
+    master = "${digitalocean_droplet.k8s_masters.0.id}"
+    workers = "${join(",", digitalocean_droplet.k8s_workers.*.id)}"
+  }
+
+  connection {
+    user = "${var.droplet_ssh_user}"
+    private_key = "${file(var.droplet_private_key_file)}"
+    host = "${element(digitalocean_droplet.k8s_workers.*.ipv4_address, count.index)}"
+  }
+
+  provisioner "remote-exec" {
+    inline = <<EOT
+      sudo mkdir -p ${var.flannel_run}
+      sudo chown ${var.droplet_ssh_user} ${var.flannel_run}
+      echo "${data.template_file.client_kubeconfig.rendered}" >> ${var.flannel_kubeconfig_file}
+    EOT
+  }
+}
+
 data "ct_config" "k8s_workers" {
   count = "${var.k8s_workers_count}"
 
@@ -102,12 +127,12 @@ data "template_file" "k8s_workers_config" {
   vars {
     cluster_dns_ip = "${var.k8s_cluster_dns_ip}"
     cluster_domain = "${var.k8s_cluster_domain}"
+    pod_cidr = "${var.k8s_cluster_cidr}"
 
-    lib_home = "${var.k8s_lib_home}"
+    lib_home = "${var.k8s_lib_kubelet_home}"
     kubelet_kubeconfig = "${var.k8s_lib_kubelet_home}/kubeconfig"
     kube_proxy_config_file = "${var.k8s_lib_kube_proxy_home}/config"
     kube_proxy_config = "${jsonencode(data.template_file.kube_proxy_config.rendered)}"
-
 
     etcd_endpoints = "${join(",", formatlist("https://%s:%s", digitalocean_droplet.etcd.*.ipv4_address_private, var.etcd_client_port))}"
 

@@ -132,6 +132,8 @@ All API requests to the API Server are authenticated using X.509 TLS certificate
 
 The Kubelets are also started with the `--anonymous-auth=false` option. They use the `--authentication-token-webhook` and `--authorization-mode-Webhook` options to enable authentication and authorization. For more information on Kubelet authentication and authorization, refer to this [documentation](https://kubernetes.io/docs/admin/kubelet-authentication-authorization/).
 
+Inter-pod communication is supported by an overlay network using [flannel](https://coreos.com/flannel/docs/latest/). The `k8s/network/flannel.yaml` manifest defines the relevant DaemonSet, ConfigMap and RBAC resources. These resources are deployed to the `kube-system` namespace.
+
 ## Add-ons
 All add-ons are deployed using [Helm charts](https://helm.sh/).
 
@@ -163,3 +165,4 @@ See the [LICENSE](LICENSE) file for the full license text.
 * [Kubernetes API Authorization](https://kubernetes.io/docs/admin/authorization/)
 * [Kubelet Authentication & Authorization](https://kubernetes.io/docs/admin/kubelet-authentication-authorization/)
 * [Kubernetes Master Node Communication](http://kubernetes.io/docs/admin/master-node-communication/#controller-manager-configuration) for details.
+* [Using Flannel with Kubernetes](https://coreos.com/flannel/docs/latest/kubernetes.html)
