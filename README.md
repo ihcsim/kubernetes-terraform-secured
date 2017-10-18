@@ -52,12 +52,7 @@ Create a copy of the `terraform.tfvars` file from the provided `terraform.tfvars
 Provision the Kubernetes cluster:
 ```sh
 $ terraform apply
-var.etcd_discovery_url
-  Discovery URL obtained from https://discovery.etcd.io/new?size=N where N is the size of the etcd cluster. This must be generated for every new etcd cluster.
-
-  Enter a value
 ```
-Note that in order to initialize the etcd cluster, the `etcd_discovery_url` variable must be assigned a value obtained from https://discovery.etcd.io/new?size=N, where `N` is the number of etcd nodes in the cluster.
 
 Once Terraform completes provisioning the cluster, the `kubeconfig` data of the new Kubernetes cluster will be output to a local git-ignored `.kubeconfig` file. Use it to interact with the cluster:
 ```sh
@@ -90,13 +85,13 @@ All droplets are initialized using CoreOS' [Container Linux Config](https://core
 **Note that this setup uses the Terraform [TLS Provider](https://www.terraform.io/docs/providers/tls/index.html) to generate RSA private keys, CSR and certificates for development purposes only. The resources generated will be saved in the Terraform state file as plain text. Make sure the Terraform state file is stored securely.**
 
 ### etcd3
-The number of etcd3 instances provisioned in the cluster can be altered using the `etcd_count` Terraform variable.
+By default, a 3-node [static cluster](https://coreos.com/etcd/docs/latest/v2/clustering.html#static) of etcd instances are provisioned. The number of instances in the cluster can be altered using the `etcd_count` Terraform variable. The `etcd_initial_cluster` variable in the `etcd.tf` file must also be updated to reflect the initial cluster membership.
 
-The etcd3 cluster is only accessible by nodes which are part of the cluster. All peer-to-peer and client-to-server communications are encrypted and authenticated using the self-signed CA, private key and TLS certificate.
+All peer-to-peer and client-to-server communications are encrypted and authenticated using the self-signed CA, private key and TLS certificate.
 
 Every etcd instance's data directory (defaulted to `/var/lib/etcd`) is mounted as a volume to a [DigitalOcean block storage](https://www.digitalocean.com/products/storage/).
 
-For testing purposes, the `etcdctl` v2 client on every etcd droplet is configured to target the etcd cluster. For example,
+For testing purposes, the `etcdctl` v3 client on every etcd droplet is configured to target the etcd cluster. For example,
 ```sh
 $ doctl compute ssh etcd-00
 Last login: <redacted>
@@ -166,3 +161,4 @@ See the [LICENSE](LICENSE) file for the full license text.
 * [Kubelet Authentication & Authorization](https://kubernetes.io/docs/admin/kubelet-authentication-authorization/)
 * [Kubernetes Master Node Communication](http://kubernetes.io/docs/admin/master-node-communication/#controller-manager-configuration) for details.
 * [Using Flannel with Kubernetes](https://coreos.com/flannel/docs/latest/kubernetes.html)
+* [Etcd Clustering](https://coreos.com/etcd/docs/latest/v2/clustering.html)

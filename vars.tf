@@ -48,10 +48,6 @@ variable "coredns_version" {
   default = "011"
 }
 
-variable "etcd_discovery_url" {
-  description = "Discovery URL obtained from https://discovery.etcd.io/new?size=N where N is the size of the etcd cluster. This must be generated for every new etcd cluster."
-}
-
 variable "etcd_version" {
   default = "3.2.0"
 }

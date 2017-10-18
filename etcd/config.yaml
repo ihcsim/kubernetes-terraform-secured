@@ -1,7 +1,8 @@
 etcd:
   version: ${etcd_version}
-  discovery: ${discovery_url}
   name: "{HOSTNAME}"
+  initial_cluster: ${etcd_initial_cluster}
+  initial_cluster_state: new
 
   data_dir: ${data_dir}
 
@@ -65,9 +66,10 @@ storage:
       contents:
         inline: |
           source /run/metadata/coreos
-          export ETCDCTL_CA_FILE=${cacert_file}
-          export ETCDCTL_CERT_FILE=${cert_file}
-          export ETCDCTL_KEY_FILE=${key_file}
+          export ETCDCTL_API=3
+          export ETCDCTL_CACERT=${cacert_file}
+          export ETCDCTL_CERT=${cert_file}
+          export ETCDCTL_KEY=${key_file}
           export ETCDCTL_ENDPOINTS=https://$${COREOS_DIGITALOCEAN_IPV4_PRIVATE_0}:${etcd_client_port}
     - path: /etc/systemd/resolved.conf.d/00-droplet.conf
       filesystem: root
