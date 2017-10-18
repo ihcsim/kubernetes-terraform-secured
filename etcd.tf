@@ -66,13 +66,13 @@ data "template_file" "etcd_config" {
 
   vars {
     etcd_version = "${var.etcd_version}"
-    discovery_url = "${var.etcd_discovery_url}"
     data_dir = "${var.etcd_data_dir}"
 
     etcd_client_port = "${var.etcd_client_port}"
     etcd_peer_port = "${var.etcd_peer_port}"
     etcd_heartbeat_interval = "${var.etcd_heartbeat_interval}"
     etcd_election_timeout = "${var.etcd_election_timeout}"
+    etcd_initial_cluster = "${join(",", formatlist("%s=https://%s.${var.droplet_domain}:%s", list("etcd-00", "etcd-01", "etcd-02"), list("etcd-00", "etcd-01", "etcd-02"), var.etcd_peer_port))}"
 
     domain = "${var.droplet_domain}"
     dns_server = "${digitalocean_droplet.coredns.ipv4_address_private}"
