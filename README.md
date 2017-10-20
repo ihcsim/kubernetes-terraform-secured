@@ -22,6 +22,7 @@ This project uses [Terraform](https://www.terraform.io/) to provision [Kubernete
 * [Container Linux Config Transpiler Provider](https://github.com/coreos/terraform-provider-ct)
 * [Go 1.8.3](https://golang.org/dl/)
 * [doctl 1.7.0](https://github.com/digitalocean/doctl)
+* [kubectl v1.8.0](https://storage.googleapis.com/kubernetes-release/release/v1.8.0/bin/linux/amd64/kubectl)
 
 ## Getting Started
 To get started, clone this repository:
@@ -127,7 +128,7 @@ All API requests to the API Server are authenticated using X.509 TLS certificate
 
 The Kubelets are also started with the `--anonymous-auth=false` option. They use the `--authentication-token-webhook` and `--authorization-mode-Webhook` options to enable authentication and authorization. For more information on Kubelet authentication and authorization, refer to this [documentation](https://kubernetes.io/docs/admin/kubelet-authentication-authorization/).
 
-Inter-pod communication is supported by an overlay network using [flannel](https://coreos.com/flannel/docs/latest/). The `k8s/network/flannel.yaml` manifest defines the relevant DaemonSet, ConfigMap and RBAC resources. These resources are deployed to the `kube-system` namespace.
+Inter-pod communication is supported by an overlay network using [flannel](https://coreos.com/flannel/docs/latest/). The `k8s/network/flannel.yaml` manifest defines the relevant DaemonSet, ConfigMap and RBAC resources. These resources are deployed to the `kube-system` namespace. CoreDNS is used to provide in-cluster DNS resolution. The manifest can be found in `k8s/network/coredns/yaml`.
 
 ## Add-ons
 All add-ons are deployed using [Helm charts](https://helm.sh/).

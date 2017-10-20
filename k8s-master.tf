@@ -87,7 +87,7 @@ resource "null_resource" "k8s_masters_tls" {
   }
 }
 
-resource "null_resource" "flannel_manifest" {
+resource "null_resource" "network_manifest" {
   triggers {
     master = "${digitalocean_droplet.k8s_masters.0.id}"
   }
@@ -96,7 +96,8 @@ resource "null_resource" "flannel_manifest" {
 
   provisioner "local-exec" {
     command = <<EOT
-      echo "${data.template_file.flannel_manifest.rendered}" | kubectl --kubeconfig=.kubeconfig create -f -
+      echo "${data.template_file.flannel_manifest.rendered}" | kubectl --kubeconfig=.kubeconfig create --validate=false -f -
+      echo "${data.template_file.coredns_manifest.rendered}" | kubectl --kubeconfig=.kubeconfig create --validate=false -f -
     EOT
   }
 }
@@ -161,6 +162,25 @@ data "template_file" "flannel_manifest" {
     pod_cidr = "${var.k8s_cluster_cidr}"
     apiserver_endpoint = "${format("https://%s:%s", digitalocean_droplet.k8s_masters.0.ipv4_address_private, var.k8s_apiserver_secure_port)}"
     kubeconfig_file = "${var.flannel_kubeconfig_file}"
+  }
+}
+
+data "template_file" "coredns_manifest" {
+  template = "${file("${path.module}/k8s/network/coredns.yaml")}"
+
+  vars {
+    apiserver_endpoint = "${format("https://%s:%s", digitalocean_droplet.k8s_masters.0.ipv4_address_private, var.k8s_apiserver_secure_port)}"
+
+    cluster_domain = "${var.k8s_cluster_domain}"
+    cluster_dns_ip = "${var.k8s_cluster_dns_ip}"
+    service_cidr = "${var.k8s_service_cluster_ip_range}"
+
+    cacert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/${var.tls_cacert_file}"
+    cert_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/coredns/${var.tls_cert_file}"
+    key_file = "${var.droplet_tls_certs_home}/${var.droplet_domain}/coredns/${var.tls_key_file}"
+    tls_home = "${var.droplet_tls_certs_home}/${var.droplet_domain}/"
+
+    coredns_version = "${var.coredns_version}"
   }
 }
 

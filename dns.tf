@@ -95,3 +95,48 @@ data "template_file" "coredns_zonefile" {
     domain = "${var.droplet_domain}"
   }
 }
+
+resource "tls_private_key" "coredns" {
+  algorithm = "RSA"
+  rsa_bits = 4096
+}
+
+resource "tls_cert_request" "coredns" {
+  key_algorithm = "${tls_private_key.coredns.algorithm}"
+  private_key_pem = "${tls_private_key.coredns.private_key_pem}"
+
+  ip_addresses = [
+    "${digitalocean_droplet.coredns.ipv4_address_private}",
+    "${digitalocean_droplet.coredns.ipv4_address}"
+  ]
+
+  dns_names = [
+    "${digitalocean_droplet.coredns.name}",
+    "${digitalocean_droplet.coredns.name}.${var.droplet_domain}"
+  ]
+
+  subject {
+    common_name = "${var.tls_coredns_cert_subject_common_name}"
+    organization = "${var.tls_coredns_cert_subject_organization}"
+    organizational_unit = "${var.tls_cert_subject_organizational_unit}"
+    street_address = ["${var.tls_cert_subject_street_address}"]
+    locality = "${var.tls_cert_subject_locality}"
+    province = "${var.tls_cert_subject_province}"
+    country = "${var.tls_cert_subject_country}"
+    postal_code = "${var.tls_cert_subject_postal_code}"
+  }
+}
+
+resource "tls_locally_signed_cert" "coredns" {
+  cert_request_pem = "${tls_cert_request.coredns.cert_request_pem}"
+  ca_key_algorithm = "${tls_private_key.cakey.algorithm}"
+  ca_private_key_pem = "${tls_private_key.cakey.private_key_pem}"
+  ca_cert_pem = "${tls_self_signed_cert.cacert.cert_pem}"
+  validity_period_hours = "${var.tls_cert_validity_period_hours}"
+  early_renewal_hours = "${var.tls_cert_early_renewal_hours}"
+
+  allowed_uses = [
+    "server_auth",
+    "client_auth"
+  ]
+}

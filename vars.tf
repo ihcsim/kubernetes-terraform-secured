@@ -158,6 +158,16 @@ variable "tls_etcd_cert_subject_organization" {
   default = "system:etcd"
 }
 
+variable "tls_coredns_cert_subject_common_name" {
+  description = "The CoreDNS TLS cert subject organization name."
+  default = "system:serviceaccount:kube-system:coredns"
+}
+
+variable "tls_coredns_cert_subject_organization" {
+  description = "The CoreDNS TLS cert subject organization name."
+  default = "system:serviceaccounts:kube-system"
+}
+
 variable "tls_kube_apiserver_cert_subject_common_name" {
   description = "The kubernetes API Server TLS cert subject organization name."
   default = "kubernetes"
