@@ -16,8 +16,8 @@ resource "digitalocean_droplet" "k8s_workers" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo mkdir -p ${var.k8s_bin_home} ${var.k8s_lib_kubelet_home} ${var.k8s_lib_kube_proxy_home} ${var.k8s_cni_home}",
-      "sudo chown -R core ${var.k8s_home} ${var.k8s_cni_home}",
+      "sudo mkdir -p ${var.k8s_bin_home} ${var.k8s_lib_kubelet_home} ${var.k8s_lib_kube_proxy_home} ${var.k8s_cni_home} ${var.flannel_run}",
+      "sudo chown -R core ${var.k8s_home} ${var.k8s_cni_home} ${var.flannel_run}",
       "wget -P ${var.k8s_bin_home} https://storage.googleapis.com/kubernetes-release/release/${var.k8s_version}/bin/linux/amd64/kubelet",
       "wget -P ${var.k8s_bin_home} https://storage.googleapis.com/kubernetes-release/release/${var.k8s_version}/bin/linux/amd64/kube-proxy",
       "wget -P ${var.k8s_bin_home} https://storage.googleapis.com/kubernetes-release/release/${var.k8s_version}/bin/linux/amd64/kubectl",
@@ -41,6 +41,11 @@ resource "digitalocean_droplet" "k8s_workers" {
     content = "${data.template_file.kube_proxy_config.rendered}"
     destination = "${var.k8s_lib_kube_proxy_home}/config"
   }
+
+  provisioner "file" {
+    content = "${data.template_file.client_kubeconfig.rendered}"
+    destination = "${var.flannel_kubeconfig_file}"
+  }
 }
 
 resource "null_resource" "k8s_workers_tls" {
@@ -58,7 +63,7 @@ resource "null_resource" "k8s_workers_tls" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo mkdir -p ${var.droplet_tls_certs_home}/${var.droplet_domain}/kubelet ${var.droplet_tls_certs_home}/${var.droplet_domain}/kube-proxy",
+      "sudo mkdir -p ${var.droplet_tls_certs_home}/${var.droplet_domain}/kubelet ${var.droplet_tls_certs_home}/${var.droplet_domain}/kube-proxy ${var.droplet_tls_certs_home}/${var.droplet_domain}/coredns",
       "sudo chown -R ${var.droplet_ssh_user} ${var.droplet_tls_certs_home}/${var.droplet_domain}"
     ]
   }
@@ -87,28 +92,15 @@ resource "null_resource" "k8s_workers_tls" {
     content = "${tls_private_key.kube_proxy.private_key_pem}"
     destination = "${var.droplet_tls_certs_home}/${var.droplet_domain}/kube-proxy/${var.tls_key_file}"
   }
-}
 
-resource "null_resource" "flannel_kubeconfig" {
-  count = "${var.k8s_workers_count}"
-
-  triggers {
-    master = "${digitalocean_droplet.k8s_masters.0.id}"
-    workers = "${join(",", digitalocean_droplet.k8s_workers.*.id)}"
+  provisioner "file" {
+    content = "${tls_locally_signed_cert.coredns.cert_pem}"
+    destination = "${var.droplet_tls_certs_home}/${var.droplet_domain}/coredns/${var.tls_cert_file}"
   }
 
-  connection {
-    user = "${var.droplet_ssh_user}"
-    private_key = "${file(var.droplet_private_key_file)}"
-    host = "${element(digitalocean_droplet.k8s_workers.*.ipv4_address, count.index)}"
-  }
-
-  provisioner "remote-exec" {
-    inline = <<EOT
-      sudo mkdir -p ${var.flannel_run}
-      sudo chown ${var.droplet_ssh_user} ${var.flannel_run}
-      echo "${data.template_file.client_kubeconfig.rendered}" >> ${var.flannel_kubeconfig_file}
-    EOT
+  provisioner "file" {
+    content = "${tls_private_key.coredns.private_key_pem}"
+    destination = "${var.droplet_tls_certs_home}/${var.droplet_domain}/coredns/${var.tls_key_file}"
   }
 }
 
