@@ -32,6 +32,7 @@ $ git clone git@github.com:ihcsim/kubernetes-terraform-secured.git
 
 Initialize the project:
 ```sh
+$ cd kubernetes-terraform-secured
 $ terraform init
 ```
 
@@ -40,7 +41,7 @@ The above command will fail with errors complaining about the missing [Config Tr
 Use the following commands to install the Config Transpiler provider:
 ```sh
 $ go get -u github.com/coreos/terraform-provider-ct
-$ cp $GOPATH/bin/terraform-provider-ct kubernetes-terraform-secured/.terraform/plugins/<os_arch>/
+$ cp $GOPATH/bin/terraform-provider-ct .terraform/plugins/<os_arch>/
 ```
 
 Re-initialize the project:
